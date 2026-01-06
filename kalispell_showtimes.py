@@ -14,7 +14,7 @@ THEATRE_URL_TEMPLATE = (
 )
 
 # How many days ahead to scrape by default
-DEFAULT_DAYS_AHEAD = 60
+DEFAULT_DAYS_AHEAD = 45  # you can still request up to 120 from the UI
 
 HEADERS = {
     "User-Agent": (
@@ -37,8 +37,6 @@ RATING_PATTERN = re.compile(
     r"^(G|PG|PG-13|PG 13|R|NC-17|NR|Not Rated)\b"
 )
 TIME_PATTERN = re.compile(r"^\d{1,2}:\d{2}(am|pm)$", re.IGNORECASE)
-
-SHOWDATE_PATTERN = re.compile(r"showDate=(\d{4}-\d{2}-\d{2})")
 
 
 def normalize_title(title: str) -> str:
@@ -126,35 +124,6 @@ def extract_movies_for_date(html: str) -> set[str]:
     return titles
 
 
-def extract_available_dates_from_slider(today_html: str, today: date, days_ahead: int) -> list[date]:
-    """
-    Look inside today's HTML for any ?showDate=YYYY-MM-DD occurrences
-    (the date slider links), and return only the real dates within
-    [today, today + days_ahead].
-
-    This avoids hitting fake dates that just bounce back to today's showtimes.
-    """
-    if not today_html:
-        return []
-
-    found = set()
-    for match in SHOWDATE_PATTERN.findall(today_html):
-        try:
-            d = datetime.strptime(match, "%Y-%m-%d").date()
-        except ValueError:
-            continue
-        # Only future-ish dates within the window
-        if today <= d <= today + timedelta(days=days_ahead):
-            found.add(d)
-
-    # Always include today explicitly
-    found.add(today)
-
-    dates_sorted = sorted(found)
-    print(f"[INFO] Slider dates within window: {[d.isoformat() for d in dates_sorted]}")
-    return dates_sorted
-
-
 def build_schedule(days_ahead: int) -> list[dict]:
     """
     Scrape from today out 'days_ahead' days,
@@ -166,41 +135,47 @@ def build_schedule(days_ahead: int) -> list[dict]:
       - last_date   = latest date in that set
       - run_length  = number of distinct dates in that set
 
-    We ONLY scrape dates that Cinemark actually exposes in the
-    date slider (showDate=YYYY-MM-DD). This avoids fake dates
-    that just show today's lineup again.
+    To avoid Cinemark's "fallback to today's showtimes" trap:
+      - We fetch today's titles once.
+      - If a *future* date has the exact same title set as today,
+        we assume it's a fake fallback and ignore that day entirely.
     """
     today = date.today()
 
-    # Fetch today's page once (we use it for the slider + today's shows)
+    # Baseline: today's actual lineup
     today_html = fetch_html_for_date(today)
     if not today_html:
-        print("[WARN] Could not fetch today's HTML; falling back to range-based dates.")
-        # Fallback: dumb range if we can't read slider at all
-        date_list = [today + timedelta(days=offset) for offset in range(days_ahead + 1)]
+        baseline_titles: set[str] = set()
     else:
-        slider_dates = extract_available_dates_from_slider(today_html, today, days_ahead)
-        if slider_dates:
-            date_list = slider_dates
-        else:
-            # If slider parsing fails, fallback to the old behavior
-            print("[WARN] No slider dates found; using simple range of days.")
-            date_list = [today + timedelta(days=offset) for offset in range(days_ahead + 1)]
+        baseline_titles = extract_movies_for_date(today_html)
+
+    print(f"[INFO] Today's titles ({today.isoformat()}): {sorted(baseline_titles)}")
 
     movie_spans: dict[str, dict] = {}
 
-    for d in date_list:
-        # Reuse today's HTML if we already fetched it
+    # Reuse today's HTML instead of hitting it twice
+    def get_html_for(d: date) -> str | None:
         if d == today and today_html is not None:
-            html = today_html
-        else:
-            html = fetch_html_for_date(d)
+            return today_html
+        return fetch_html_for_date(d)
 
+    for offset in range(days_ahead + 1):
+        d = today + timedelta(days=offset)
+        html = get_html_for(d)
         if not html:
             continue
 
         titles = extract_movies_for_date(html)
         if not titles:
+            continue
+
+        # Skip dates that appear to just be "today in disguise"
+        # (Cinemark fallback when that showDate doesn't really exist)
+        if d != today and baseline_titles and titles == baseline_titles:
+            print(
+                f"[INFO] Skipping {d.isoformat()} – titles identical to today; "
+                f"likely a fallback when date has no real showtimes."
+            )
             continue
 
         for title in titles:
@@ -230,7 +205,7 @@ def build_schedule(days_ahead: int) -> list[dict]:
         first = all_dates[0]
         last = all_dates[-1]
 
-        days_until = (first - date.today()).days
+        days_until = (first - today).days
         run_len = len(all_dates)  # number of actual days it plays
 
         result.append(
@@ -281,7 +256,7 @@ def api_showtimes():
 
 @app.route("/")
 def index():
-    """Serve the phone-friendly HTML UI."""
+    """Serve the phone-friendly HTML UI with urgency glow."""
     html = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -590,7 +565,7 @@ def index():
       <div class="controls">
         <label>
           Days ahead
-          <input id="daysInput" type="number" min="1" max="120" value="60">
+          <input id="daysInput" type="number" min="1" max="120" value="45">
         </label>
         <button id="reloadBtn">Refresh</button>
         <button id="resetHiddenBtn">Reset hidden</button>
@@ -659,15 +634,15 @@ def index():
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) {
-          return { daysAhead: 60, sortMode: 'start' };
+          return { daysAhead: 45, sortMode: 'start' };
         }
         const obj = JSON.parse(raw);
         return {
-          daysAhead: typeof obj.daysAhead === 'number' ? obj.daysAhead : 60,
+          daysAhead: typeof obj.daysAhead === 'number' ? obj.daysAhead : 45,
           sortMode: obj.sortMode === 'run' ? 'run' : 'start',
         };
       } catch (e) {
-        return { daysAhead: 60, sortMode: 'start' };
+        return { daysAhead: 45, sortMode: 'start' };
       }
     }
 
@@ -756,7 +731,6 @@ def index():
 
     // --- urgency logic ---
     function daysRemaining(movie) {
-      // normalize to local midnight for "today"
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
       const last = new Date(movie.last_date + 'T12:00:00');
@@ -950,8 +924,8 @@ def index():
     }
 
     async function loadData() {
-      const raw = parseInt(daysInput.value || String(settings.daysAhead || 60), 10);
-      let days = isNaN(raw) ? 60 : raw;
+      const raw = parseInt(daysInput.value || String(settings.daysAhead || 45), 10);
+      let days = isNaN(raw) ? 45 : raw;
       days = Math.min(120, Math.max(1, days));
       daysInput.value = String(days);
       settings.daysAhead = days;
@@ -966,7 +940,6 @@ def index():
       laterEmpty.style.display = 'none';
 
       try {
-        // cache: 'no-store' to force fresh data each time, plus timestamp busting
         const res = await fetch(`/api/showtimes?days=${days}&t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
@@ -1004,12 +977,12 @@ def index():
         statusEl.textContent = mode === 'run'
           ? 'Sorting by shortest runs.'
           : 'Sorting by soonest start.';
-        renderMovies(); // just resort cached data, no refetch
+        renderMovies();
       });
     });
 
     window.addEventListener('load', () => {
-      daysInput.value = String(settings.daysAhead || 60);
+      daysInput.value = String(settings.daysAhead || 45);
       applySortModeUI();
       updateHiddenStatus();
       loadData();
