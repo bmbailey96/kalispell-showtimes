@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: kalispell-showtimes
+    env: python
+    buildCommand: ""
+    startCommand: python kalispell_showtimes.py
+    plan: free
