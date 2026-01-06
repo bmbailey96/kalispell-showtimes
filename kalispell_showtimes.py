@@ -38,6 +38,8 @@ RATING_PATTERN = re.compile(
 )
 TIME_PATTERN = re.compile(r"^\d{1,2}:\d{2}(am|pm)$", re.IGNORECASE)
 
+SHOWDATE_PATTERN = re.compile(r"showDate=(\d{4}-\d{2}-\d{2})")
+
 
 def normalize_title(title: str) -> str:
     """
@@ -56,7 +58,7 @@ def fetch_html_for_date(d: date) -> str | None:
     """Download the Cinemark showtimes page for a specific date."""
     url = THEATRE_URL_TEMPLATE.format(show_date=d.isoformat())
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp = requests.get(url, headers=HEADERS, timeout=10)
         resp.raise_for_status()
         return resp.text
     except requests.RequestException as e:
@@ -124,6 +126,35 @@ def extract_movies_for_date(html: str) -> set[str]:
     return titles
 
 
+def extract_available_dates_from_slider(today_html: str, today: date, days_ahead: int) -> list[date]:
+    """
+    Look inside today's HTML for any ?showDate=YYYY-MM-DD occurrences
+    (the date slider links), and return only the real dates within
+    [today, today + days_ahead].
+
+    This avoids hitting fake dates that just bounce back to today's showtimes.
+    """
+    if not today_html:
+        return []
+
+    found = set()
+    for match in SHOWDATE_PATTERN.findall(today_html):
+        try:
+            d = datetime.strptime(match, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        # Only future-ish dates within the window
+        if today <= d <= today + timedelta(days=days_ahead):
+            found.add(d)
+
+    # Always include today explicitly
+    found.add(today)
+
+    dates_sorted = sorted(found)
+    print(f"[INFO] Slider dates within window: {[d.isoformat() for d in dates_sorted]}")
+    return dates_sorted
+
+
 def build_schedule(days_ahead: int) -> list[dict]:
     """
     Scrape from today out 'days_ahead' days,
@@ -135,47 +166,41 @@ def build_schedule(days_ahead: int) -> list[dict]:
       - last_date   = latest date in that set
       - run_length  = number of distinct dates in that set
 
-    To avoid Cinemark's "fallback to today's showtimes" trap:
-      - We fetch today's titles once.
-      - If a *future* date has the exact same title set as today,
-        we assume it's a fake fallback and ignore that day entirely.
+    We ONLY scrape dates that Cinemark actually exposes in the
+    date slider (showDate=YYYY-MM-DD). This avoids fake dates
+    that just show today's lineup again.
     """
     today = date.today()
 
-    # Baseline: today's actual lineup
+    # Fetch today's page once (we use it for the slider + today's shows)
     today_html = fetch_html_for_date(today)
     if not today_html:
-        baseline_titles: set[str] = set()
+        print("[WARN] Could not fetch today's HTML; falling back to range-based dates.")
+        # Fallback: dumb range if we can't read slider at all
+        date_list = [today + timedelta(days=offset) for offset in range(days_ahead + 1)]
     else:
-        baseline_titles = extract_movies_for_date(today_html)
+        slider_dates = extract_available_dates_from_slider(today_html, today, days_ahead)
+        if slider_dates:
+            date_list = slider_dates
+        else:
+            # If slider parsing fails, fallback to the old behavior
+            print("[WARN] No slider dates found; using simple range of days.")
+            date_list = [today + timedelta(days=offset) for offset in range(days_ahead + 1)]
 
-    print(f"[INFO] Today's titles ({today.isoformat()}): {sorted(baseline_titles)}")
-
-    # key = normalized title => info dict: display_title + set of dates
     movie_spans: dict[str, dict] = {}
 
-    # We already fetched today above; reuse that HTML instead of hitting it twice
-    def get_html_for(d: date) -> str | None:
+    for d in date_list:
+        # Reuse today's HTML if we already fetched it
         if d == today and today_html is not None:
-            return today_html
-        return fetch_html_for_date(d)
+            html = today_html
+        else:
+            html = fetch_html_for_date(d)
 
-    for offset in range(days_ahead + 1):
-        d = today + timedelta(days=offset)
-        html = get_html_for(d)
         if not html:
             continue
 
         titles = extract_movies_for_date(html)
         if not titles:
-            continue
-
-        # Skip dates that appear to just be "today in disguise"
-        if d != today and baseline_titles and titles == baseline_titles:
-            print(
-                f"[INFO] Skipping {d.isoformat()} – titles identical to today; "
-                f"likely a fallback when date has no real showtimes."
-            )
             continue
 
         for title in titles:
@@ -205,7 +230,7 @@ def build_schedule(days_ahead: int) -> list[dict]:
         first = all_dates[0]
         last = all_dates[-1]
 
-        days_until = (first - today).days
+        days_until = (first - date.today()).days
         run_len = len(all_dates)  # number of actual days it plays
 
         result.append(
@@ -240,13 +265,18 @@ def api_showtimes():
     days = max(1, min(days, 120))
 
     data = build_schedule(days)
-    return jsonify(
+
+    resp = jsonify(
         {
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "days_ahead": days,
             "movies": data,
         }
     )
+    # Tell browsers NOT to cache this, so phone/desktop both always see fresh data
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 
 @app.route("/")
@@ -268,6 +298,9 @@ def index():
       --text: #f9fafb;
       --muted: #9ca3af;
       --border: #27272f;
+
+      --yellow-glow: rgba(250, 204, 21, 0.8);
+      --red-glow: rgba(248, 113, 113, 0.9);
     }
     body {
       margin: 0;
@@ -416,6 +449,22 @@ def index():
       border: 1px solid var(--border);
       padding: 0.6rem 0.75rem 0.55rem;
       box-shadow: 0 12px 25px rgba(0, 0, 0, 0.45);
+      transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+    }
+    .card-urgent-yellow {
+      border-color: rgba(250, 204, 21, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(250, 204, 21, 0.6),
+        0 12px 26px rgba(0, 0, 0, 0.6),
+        0 0 30px rgba(250, 204, 21, 0.25);
+    }
+    .card-urgent-red {
+      border-color: rgba(248, 113, 113, 0.95);
+      box-shadow:
+        0 0 0 1px rgba(248, 113, 113, 0.7),
+        0 12px 26px rgba(0, 0, 0, 0.65),
+        0 0 35px rgba(248, 113, 113, 0.3);
+      transform: translateY(-1px);
     }
     .card-header {
       display: flex;
@@ -474,6 +523,23 @@ def index():
       background: rgba(248, 250, 252, 0.06);
       border: 1px solid rgba(252, 211, 77, 0.6);
       color: #facc15;
+    }
+    .urgency-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.14rem 0.55rem;
+      border-radius: 999px;
+    }
+    .urgency-yellow {
+      background: rgba(250, 204, 21, 0.08);
+      border: 1px solid rgba(250, 204, 21, 0.7);
+      color: #facc15;
+    }
+    .urgency-red {
+      background: rgba(248, 113, 113, 0.09);
+      border: 1px solid rgba(248, 113, 113, 0.85);
+      color: #fecaca;
     }
     .hide-row {
       margin-top: 0.25rem;
@@ -688,6 +754,33 @@ def index():
       });
     }
 
+    // --- urgency logic ---
+    function daysRemaining(movie) {
+      // normalize to local midnight for "today"
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+      const last = new Date(movie.last_date + 'T12:00:00');
+
+      const diffMs = last - today;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      return diffDays;
+    }
+
+    function getUrgency(movie) {
+      const remaining = daysRemaining(movie);
+      const run = movie.run_length_days;
+
+      // RED: final chance (today or tomorrow only)
+      if (remaining <= 1) {
+        return 'red';
+      }
+      // YELLOW: very limited total run OR leaving within ~5 days
+      if (run <= 3 || remaining <= 5) {
+        return 'yellow';
+      }
+      return 'none';
+    }
+
     function specialRunLabel(movie) {
       const run = movie.run_length_days;
       if (run === 1) return 'ONE NIGHT ONLY';
@@ -700,6 +793,10 @@ def index():
     function createCard(movie) {
       const card = document.createElement('div');
       card.className = 'card';
+
+      const urgency = getUrgency(movie);
+      if (urgency === 'yellow') card.classList.add('card-urgent-yellow');
+      if (urgency === 'red') card.classList.add('card-urgent-red');
 
       const header = document.createElement('div');
       header.className = 'card-header';
@@ -731,13 +828,29 @@ def index():
       meta.appendChild(line2);
 
       const runLabel = specialRunLabel(movie);
-      if (runLabel) {
+      if (runLabel || urgency !== 'none') {
         const runRow = document.createElement('div');
         runRow.className = 'run-row';
-        const runTag = document.createElement('div');
-        runTag.className = 'run-tag';
-        runTag.textContent = runLabel;
-        runRow.appendChild(runTag);
+
+        if (runLabel) {
+          const runTag = document.createElement('div');
+          runTag.className = 'run-tag';
+          runTag.textContent = runLabel;
+          runRow.appendChild(runTag);
+        }
+
+        if (urgency === 'yellow') {
+          const u = document.createElement('div');
+          u.className = 'urgency-label urgency-yellow';
+          u.textContent = 'Leaves soon';
+          runRow.appendChild(u);
+        } else if (urgency === 'red') {
+          const u = document.createElement('div');
+          u.className = 'urgency-label urgency-red';
+          u.textContent = 'Final chance';
+          runRow.appendChild(u);
+        }
+
         meta.appendChild(runRow);
       }
 
@@ -853,7 +966,8 @@ def index():
       laterEmpty.style.display = 'none';
 
       try {
-        const res = await fetch(`/api/showtimes?days=${days}`);
+        // cache: 'no-store' to force fresh data each time, plus timestamp busting
+        const res = await fetch(`/api/showtimes?days=${days}&t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
