@@ -1,20 +1,21 @@
 import re
 import socket
+import time
 from datetime import date, datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request, Response
 
-# ------------ CONFIG ------------
+# ---------------- CONFIG ----------------
 
-THEATRE_URL_TEMPLATE = (
-    "https://www.cinemark.com/theatres/mt-kalispell/"
-    "cinemark-signature-stadium-kalispell-14?showDate={show_date}"
+# TributeMovies page that already lists each movie + every date it plays
+TRIBUTE_URL = (
+    "https://www.tributemovies.com/cinema/Montana/Kalispell/"
+    "Cinemark-Signature-Stadium-Kalispell-14/10338/"
 )
 
-# How many days ahead to scrape by default
-DEFAULT_DAYS_AHEAD = 45  # you can still request up to 120 from the UI
+DEFAULT_DAYS_AHEAD = 45  # UI can still request up to 120
 
 HEADERS = {
     "User-Agent": (
@@ -24,193 +25,247 @@ HEADERS = {
     )
 }
 
-# Titles that are clearly not actual movies (UI junk, etc.)
-BANNED_TITLES_LOWER = {
-    "add to watch list",
-    "details",
-    "trailer",
-    "question mark icon",
-    "?",
+# Lines like: "Sat, Jan 17: 1:00pm"
+DATE_LINE_PATTERN = re.compile(
+    r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s+([A-Za-z]{3})\s+(\d{1,2})(?:,\s*(\d{4}))?\s*:",
+    re.IGNORECASE,
+)
+
+MONTHS = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
 
-RATING_PATTERN = re.compile(
-    r"^(G|PG|PG-13|PG 13|R|NC-17|NR|Not Rated)\b"
-)
-TIME_PATTERN = re.compile(r"^\d{1,2}:\d{2}(am|pm)$", re.IGNORECASE)
+# Titles we never want to treat as movies (very defensive)
+BANNED_TITLES_LOWER = {
+    "",
+    "read reviews",
+    "rate movie",
+    "watch trailer",
+    "regular showtimes",
+    "3d showtimes",
+    "filters",
+    "all showtimes",
+    "theaters nearby",
+    "about us",
+}
 
+# ---------------- HELPERS ----------------
 
 def normalize_title(title: str) -> str:
-    """
-    Make a 'canonical' key for a movie title so that
-    little variations collapse together.
-    """
-    t = title.lower()
-    # Strip everything except letters and digits
+    t = (title or "").lower()
     t = re.sub(r"[^a-z0-9]+", "", t)
     return t
 
 
-# ------------ SCRAPER ------------
+def parse_showdate_line_to_date(line: str, today: date) -> date | None:
+    """
+    Convert "Sat, Jan 17:" to a real date.
+    Tribute showtime lines typically do NOT include the year.
+    We infer year with a simple rollover rule:
+      - Try current year.
+      - If that date is > ~300 days in the past relative to today, bump year + 1.
+      - If that date is > ~300 days in the future, bump year - 1 (rare, but safe).
+    """
+    m = DATE_LINE_PATTERN.match(line.strip())
+    if not m:
+        return None
 
-def fetch_html_for_date(d: date) -> str | None:
-    """Download the Cinemark showtimes page for a specific date."""
-    url = THEATRE_URL_TEMPLATE.format(show_date=d.isoformat())
+    mon_abbr = (m.group(2) or "").strip().lower()
+    day_num = int(m.group(3))
+    explicit_year = m.group(4)
+
+    month = MONTHS.get(mon_abbr)
+    if not month:
+        return None
+
+    if explicit_year:
+        year = int(explicit_year)
+        try:
+            return date(year, month, day_num)
+        except ValueError:
+            return None
+
+    # Infer year
+    year = today.year
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=10)
+        d = date(year, month, day_num)
+    except ValueError:
+        return None
+
+    delta = (d - today).days
+    if delta < -300:
+        # e.g. today is Jan 8, and we see "Dec 28" -> likely Dec 28 THIS year? Actually that's in the future.
+        # This branch triggers when it looks far in the past; push forward a year.
+        try:
+            return date(year + 1, month, day_num)
+        except ValueError:
+            return None
+    if delta > 300:
+        # extremely unlikely, but keep it sane
+        try:
+            return date(year - 1, month, day_num)
+        except ValueError:
+            return None
+
+    return d
+
+
+# ---------------- SCRAPER (TributeMovies) ----------------
+
+def fetch_tribute_html() -> str | None:
+    try:
+        resp = requests.get(TRIBUTE_URL, headers=HEADERS, timeout=15)
         resp.raise_for_status()
         return resp.text
     except requests.RequestException as e:
-        print(f"[WARN] Failed to fetch {url}: {e}")
+        print(f"[WARN] Failed to fetch TributeMovies page: {e}")
         return None
 
 
-def extract_movies_for_date(html: str) -> set[str]:
+def extract_movie_date_sets_from_tribute(html: str) -> dict[str, dict]:
     """
-    Parse the HTML for a single day and return a set of movie titles.
+    Parse the TributeMovies HTML and return:
+      { normalized_title: { "display_title": "...", "dates": set[date] } }
 
-    Heuristic:
-    - Find the "Showtimes for" header.
-    - From there, walk forward through <a> tags.
-    - Treat an <a> as a movie title if:
-      * It isn't a banned word,
-      * It isn't a time string like "7:45pm",
-      * There is a rating string (G, PG-13, etc.) somewhere nearby.
+    Structure on page is generally:
+      ## <a> Movie Title </a>
+      ...
+      ### Regular Showtimes
+      Thu, Jan 8: ...
+      Fri, Jan 9: ...
+      ...
+      ## <a> Next Movie </a>
     """
     soup = BeautifulSoup(html, "html.parser")
-
-    # Find the start of the showtimes section
-    text_node = soup.find(string=re.compile(r"^Showtimes for", re.IGNORECASE))
-    if not text_node:
-        return set()
-
-    start_tag = text_node.parent
-
-    # Find an approximate "end" marker (email signup/footer)
-    stop_node = soup.find(
-        string=re.compile(r"Get email updates about movies", re.IGNORECASE)
-    )
-
-    titles: set[str] = set()
-
-    for a in start_tag.find_all_next("a"):
-        # Stop if we walk into the footer
-        if stop_node and a is stop_node:
-            break
-
-        raw = a.get_text(strip=True)
-        if not raw:
-            continue
-
-        title = raw.strip()
-
-        # Skip UI junk by title text
-        if title.lower() in BANNED_TITLES_LOWER:
-            continue
-
-        # Skip obvious showtime strings like "7:45pm"
-        if TIME_PATTERN.match(title):
-            continue
-
-        # Look ahead for a rating string near this link
-        rating_text = a.find_next(string=RATING_PATTERN)
-        if not rating_text:
-            continue
-
-        if stop_node and rating_text is stop_node:
-            continue
-
-        titles.add(title)
-
-    return titles
-
-
-def build_schedule(days_ahead: int) -> list[dict]:
-    """
-    Scrape from today out 'days_ahead' days,
-    and build a movie list.
-
-    For each movie we track:
-      - the *set* of dates it actually has showtimes
-      - first_date  = earliest date in that set
-      - last_date   = latest date in that set
-      - run_length  = number of distinct dates in that set
-
-    To avoid Cinemark's "fallback to today's showtimes" trap:
-      - We fetch today's titles once.
-      - If a *future* date has the exact same title set as today,
-        we assume it's a fake fallback and ignore that day entirely.
-    """
     today = date.today()
-
-    # Baseline: today's actual lineup
-    today_html = fetch_html_for_date(today)
-    if not today_html:
-        baseline_titles: set[str] = set()
-    else:
-        baseline_titles = extract_movies_for_date(today_html)
-
-    print(f"[INFO] Today's titles ({today.isoformat()}): {sorted(baseline_titles)}")
 
     movie_spans: dict[str, dict] = {}
 
-    # Reuse today's HTML instead of hitting it twice
-    def get_html_for(d: date) -> str | None:
-        if d == today and today_html is not None:
-            return today_html
-        return fetch_html_for_date(d)
-
-    for offset in range(days_ahead + 1):
-        d = today + timedelta(days=offset)
-        html = get_html_for(d)
-        if not html:
+    # Tribute uses <h2> for movie titles (as seen in the page text)
+    for h2 in soup.find_all("h2"):
+        title = h2.get_text(" ", strip=True)
+        if not title:
             continue
 
-        titles = extract_movies_for_date(html)
-        if not titles:
+        # Clean up weird whitespace
+        title = re.sub(r"\s+", " ", title).strip()
+
+        if title.lower() in BANNED_TITLES_LOWER:
             continue
 
-        # Skip dates that appear to just be "today in disguise"
-        # (Cinemark fallback when that showDate doesn't really exist)
-        if d != today and baseline_titles and titles == baseline_titles:
-            print(
-                f"[INFO] Skipping {d.isoformat()} – titles identical to today; "
-                f"likely a fallback when date has no real showtimes."
-            )
+        # Some pages include non-movie headers; require at least a couple letters
+        if len(re.sub(r"[^A-Za-z]+", "", title)) < 2:
             continue
 
-        for title in titles:
-            norm = normalize_title(title)
-            info = movie_spans.setdefault(
-                norm,
-                {
-                    "display_title": title,
-                    "dates": set(),  # set[date]
-                },
-            )
+        # Walk forward until the next <h2>, harvesting date lines
+        dates_for_movie: set[date] = set()
 
-            # Prefer the more descriptive / longer title
-            if len(title) > len(info["display_title"]):
-                info["display_title"] = title
+        for sib in h2.next_siblings:
+            if getattr(sib, "name", None) == "h2":
+                break
 
-            info["dates"].add(d)
+            # Collect text from this sibling chunk
+            chunk_text = ""
+            if isinstance(sib, str):
+                chunk_text = sib
+            else:
+                try:
+                    chunk_text = sib.get_text("\n", strip=True)
+                except Exception:
+                    chunk_text = ""
+
+            if not chunk_text:
+                continue
+
+            for raw_line in chunk_text.splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                d = parse_showdate_line_to_date(line, today=today)
+                if d:
+                    dates_for_movie.add(d)
+
+        if not dates_for_movie:
+            # If it truly has no dated showtimes, it’s not useful for your math view.
+            # (Tribute usually has dates though.)
+            continue
+
+        norm = normalize_title(title)
+        info = movie_spans.setdefault(
+            norm,
+            {"display_title": title, "dates": set()},
+        )
+
+        # Prefer longer title text if we see variations
+        if len(title) > len(info["display_title"]):
+            info["display_title"] = title
+
+        info["dates"].update(dates_for_movie)
+
+    return movie_spans
+
+
+# ---------------- SCHEDULE BUILD + CACHE ----------------
+
+# Simple in-memory cache so multiple refreshes don’t slam TributeMovies
+_CACHE = {
+    "ts": 0.0,
+    "movie_spans": None,  # dict or None
+}
+CACHE_TTL_SECONDS = 10 * 60  # 10 minutes
+
+
+def get_cached_movie_spans(force: bool = False) -> dict[str, dict] | None:
+    now = time.time()
+    if not force and _CACHE["movie_spans"] is not None and (now - _CACHE["ts"]) < CACHE_TTL_SECONDS:
+        return _CACHE["movie_spans"]
+
+    html = fetch_tribute_html()
+    if not html:
+        return None
+
+    spans = extract_movie_date_sets_from_tribute(html)
+    _CACHE["ts"] = now
+    _CACHE["movie_spans"] = spans
+    print(f"[INFO] TributeMovies parsed: {len(spans)} unique titles cached.")
+    return spans
+
+
+def build_schedule(days_ahead: int, force_refresh: bool = False) -> list[dict]:
+    """
+    Build a list of movies with:
+      - the set of dates it actually plays (within the window)
+      - first_date, last_date
+      - run_length_days = number of distinct dates in that set
+    """
+    today = date.today()
+    cutoff = today + timedelta(days=days_ahead)
+
+    movie_spans = get_cached_movie_spans(force=force_refresh)
+    if not movie_spans:
+        return []
 
     result: list[dict] = []
 
     for norm, info in movie_spans.items():
-        dates_set: set[date] = info["dates"]
+        dates_set: set[date] = info.get("dates", set())
         if not dates_set:
             continue
 
-        all_dates = sorted(dates_set)
-        first = all_dates[0]
-        last = all_dates[-1]
+        # Keep only dates inside the requested window (today .. today+days_ahead)
+        window_dates = sorted(d for d in dates_set if today <= d <= cutoff)
+        if not window_dates:
+            continue
 
+        first = window_dates[0]
+        last = window_dates[-1]
+        run_len = len(window_dates)
         days_until = (first - today).days
-        run_len = len(all_dates)  # number of actual days it plays
 
         result.append(
             {
-                "title": info["display_title"],
+                "title": info.get("display_title", ""),
                 "first_date": first.isoformat(),
                 "last_date": last.isoformat(),
                 "days_until_start": days_until,
@@ -218,37 +273,40 @@ def build_schedule(days_ahead: int) -> list[dict]:
             }
         )
 
-    # Sort movies by soonest start, then alphabetically
-    result.sort(key=lambda x: (x["days_until_start"], x["title"]))
+    # Default sort: soonest start, then shorter run, then title
+    result.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
     return result
 
 
-# ------------ FLASK APP ------------
+# ---------------- FLASK APP ----------------
 
 app = Flask(__name__)
 
 
 @app.route("/api/showtimes")
 def api_showtimes():
-    """JSON API: /api/showtimes?days=N"""
+    """JSON API: /api/showtimes?days=N&force=1"""
     try:
         days = int(request.args.get("days", DEFAULT_DAYS_AHEAD))
     except ValueError:
         days = DEFAULT_DAYS_AHEAD
 
-    # Clamp between 1 and 120 for sanity
     days = max(1, min(days, 120))
 
-    data = build_schedule(days)
+    force = request.args.get("force", "0") == "1"
+
+    data = build_schedule(days, force_refresh=force)
 
     resp = jsonify(
         {
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "days_ahead": days,
+            "source": "TributeMovies",
             "movies": data,
         }
     )
-    # Tell browsers NOT to cache this, so phone/desktop both always see fresh data
+
+    # Prevent caching differences between phone/desktop
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     return resp
@@ -300,6 +358,7 @@ def index():
       font-size: 0.8rem;
       color: var(--muted);
       margin-top: 0.25rem;
+      line-height: 1.35;
     }
     .controls {
       display: flex;
@@ -338,6 +397,14 @@ def index():
     }
     #reloadBtn:hover {
       background: rgba(249, 115, 22, 0.3);
+    }
+    #forceBtn {
+      background: rgba(56, 189, 248, 0.14);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    #forceBtn:hover {
+      background: rgba(56, 189, 248, 0.22);
     }
     #resetHiddenBtn {
       background: transparent;
@@ -560,7 +627,7 @@ def index():
     <header>
       <h1>Kalispell Showtimes Radar</h1>
       <div class="subtitle">
-        Cinemark Signature Stadium Kalispell 14 · auto-scraped every time you refresh
+        Source: TributeMovies (single-page scrape) · refresh to re-pull the schedule
       </div>
       <div class="controls">
         <label>
@@ -568,6 +635,7 @@ def index():
           <input id="daysInput" type="number" min="1" max="120" value="45">
         </label>
         <button id="reloadBtn">Refresh</button>
+        <button id="forceBtn" title="Ignore the 10-minute server cache and re-fetch right now">Force re-scrape</button>
         <button id="resetHiddenBtn">Reset hidden</button>
       </div>
       <div class="sort-row">
@@ -618,6 +686,7 @@ def index():
     const laterEmpty = document.getElementById('laterEmpty');
     const daysInput = document.getElementById('daysInput');
     const reloadBtn = document.getElementById('reloadBtn');
+    const forceBtn = document.getElementById('forceBtn');
     const resetHiddenBtn = document.getElementById('resetHiddenBtn');
     const sortButtons = document.querySelectorAll('.sort-btn');
 
@@ -633,9 +702,7 @@ def index():
     function loadSettings() {
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) {
-          return { daysAhead: 45, sortMode: 'start' };
-        }
+        if (!raw) return { daysAhead: 45, sortMode: 'start' };
         const obj = JSON.parse(raw);
         return {
           daysAhead: typeof obj.daysAhead === 'number' ? obj.daysAhead : 45,
@@ -647,11 +714,7 @@ def index():
     }
 
     function saveSettings() {
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      } catch (e) {
-        // ignore
-      }
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
     }
 
     function loadHidden() {
@@ -667,11 +730,7 @@ def index():
     }
 
     function saveHidden() {
-      try {
-        localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(hiddenSet)));
-      } catch (e) {
-        // ignore
-      }
+      try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(hiddenSet))); } catch (e) {}
     }
 
     let settings = loadSettings();
@@ -681,11 +740,8 @@ def index():
     function applySortModeUI() {
       sortButtons.forEach(btn => {
         const mode = btn.dataset.mode || 'start';
-        if (mode === settings.sortMode) {
-          btn.classList.add('active-sort');
-        } else {
-          btn.classList.remove('active-sort');
-        }
+        if (mode === settings.sortMode) btn.classList.add('active-sort');
+        else btn.classList.remove('active-sort');
       });
     }
 
@@ -707,12 +763,9 @@ def index():
     }
 
     function humanDaysUntil(daysUntil) {
-      if (daysUntil === 0) return 'Now playing';
+      if (daysUntil <= 0) return 'Now playing';
       if (daysUntil === 1) return 'Starts in 1 day';
-      if (daysUntil > 1) return `Starts in ${daysUntil} days`;
-      const ago = Math.abs(daysUntil);
-      if (ago === 1) return 'Started 1 day ago';
-      return `Started ${ago} days ago`;
+      return `Starts in ${daysUntil} days`;
     }
 
     function humanRunLength(run) {
@@ -721,7 +774,7 @@ def index():
     }
 
     function prettyDate(iso) {
-      const d = new Date(iso + 'T12:00:00'); // noon to avoid TZ weirdness
+      const d = new Date(iso + 'T12:00:00');
       return d.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
@@ -729,29 +782,20 @@ def index():
       });
     }
 
-    // --- urgency logic ---
     function daysRemaining(movie) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
       const last = new Date(movie.last_date + 'T12:00:00');
-
       const diffMs = last - today;
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      return diffDays;
+      return Math.floor(diffMs / (1000 * 60 * 60 * 24));
     }
 
     function getUrgency(movie) {
       const remaining = daysRemaining(movie);
       const run = movie.run_length_days;
 
-      // RED: final chance (today or tomorrow only)
-      if (remaining <= 1) {
-        return 'red';
-      }
-      // YELLOW: very limited total run OR leaving within ~5 days
-      if (run <= 3 || remaining <= 5) {
-        return 'yellow';
-      }
+      if (remaining <= 1) return 'red';          // final chance (today or tomorrow)
+      if (run <= 3 || remaining <= 5) return 'yellow'; // limited or leaving soon
       return 'none';
     }
 
@@ -792,8 +836,10 @@ def index():
 
       const meta = document.createElement('div');
       meta.className = 'card-meta';
+
       const line1 = document.createElement('div');
       line1.innerHTML = `<span class="meta-highlight">${humanDaysUntil(movie.days_until_start)}</span>`;
+
       const line2 = document.createElement('div');
       line2.className = 'meta-secondary';
       line2.textContent = humanRunLength(movie.run_length_days);
@@ -831,6 +877,7 @@ def index():
       const normKey = normalizeTitleJS(movie.title);
       const hideRow = document.createElement('div');
       hideRow.className = 'hide-row';
+
       const hideBtn = document.createElement('button');
       hideBtn.className = 'hide-btn';
       hideBtn.textContent = 'Hide';
@@ -857,22 +904,14 @@ def index():
       const movies = [...list];
       if (mode === 'run') {
         movies.sort((a, b) => {
-          if (a.run_length_days !== b.run_length_days) {
-            return a.run_length_days - b.run_length_days;
-          }
-          if (a.days_until_start !== b.days_until_start) {
-            return a.days_until_start - b.days_until_start;
-          }
+          if (a.run_length_days !== b.run_length_days) return a.run_length_days - b.run_length_days;
+          if (a.days_until_start !== b.days_until_start) return a.days_until_start - b.days_until_start;
           return a.title.localeCompare(b.title);
         });
       } else {
         movies.sort((a, b) => {
-          if (a.days_until_start !== b.days_until_start) {
-            return a.days_until_start - b.days_until_start;
-          }
-          if (a.run_length_days !== b.run_length_days) {
-            return a.run_length_days - b.run_length_days;
-          }
+          if (a.days_until_start !== b.days_until_start) return a.days_until_start - b.days_until_start;
+          if (a.run_length_days !== b.run_length_days) return a.run_length_days - b.run_length_days;
           return a.title.localeCompare(b.title);
         });
       }
@@ -923,7 +962,7 @@ def index():
       updateEmptyMessages();
     }
 
-    async function loadData() {
+    async function loadData(force) {
       const raw = parseInt(daysInput.value || String(settings.daysAhead || 45), 10);
       let days = isNaN(raw) ? 45 : raw;
       days = Math.min(120, Math.max(1, days));
@@ -931,7 +970,7 @@ def index():
       settings.daysAhead = days;
       saveSettings();
 
-      statusEl.textContent = `Loading up to ${days} days ahead from the theatre site…`;
+      statusEl.textContent = `Loading up to ${days} days ahead…`;
       nowGrid.innerHTML = '';
       soonGrid.innerHTML = '';
       laterGrid.innerHTML = '';
@@ -940,25 +979,26 @@ def index():
       laterEmpty.style.display = 'none';
 
       try {
-        const res = await fetch(`/api/showtimes?days=${days}&t=${Date.now()}`, { cache: 'no-store' });
+        const forceFlag = force ? '&force=1' : '';
+        const res = await fetch(`/api/showtimes?days=${days}${forceFlag}&t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
         cachedMovies = data.movies || [];
-
-        statusEl.textContent = `Generated at ${new Date(data.generated_at).toLocaleString()} · window: ${data.days_ahead} days`;
+        statusEl.textContent = `Generated at ${new Date(data.generated_at).toLocaleString()} · window: ${data.days_ahead} days · source: ${data.source || 'unknown'}`;
 
         renderMovies();
       } catch (err) {
         console.error(err);
-        statusEl.textContent = 'Error talking to the scraper. Is the Python app running and online?';
+        statusEl.textContent = 'Error talking to the scraper. Server asleep? Or the source site changed?';
         nowEmpty.style.display = 'block';
         soonEmpty.style.display = 'block';
         laterEmpty.style.display = 'block';
       }
     }
 
-    reloadBtn.addEventListener('click', loadData);
+    reloadBtn.addEventListener('click', () => loadData(false));
+    forceBtn.addEventListener('click', () => loadData(true));
 
     resetHiddenBtn.addEventListener('click', () => {
       hiddenSet.clear();
@@ -985,7 +1025,7 @@ def index():
       daysInput.value = String(settings.daysAhead || 45);
       applySortModeUI();
       updateHiddenStatus();
-      loadData();
+      loadData(false);
     });
   </script>
 </body>
