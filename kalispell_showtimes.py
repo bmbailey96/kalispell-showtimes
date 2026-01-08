@@ -7,6 +7,13 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request, Response
 
+# Python 3.9+ has zoneinfo built in
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None  # type: ignore
+
+
 # ------------ CONFIG ------------
 
 TRIBUTE_THEATRE_URL = (
@@ -14,28 +21,42 @@ TRIBUTE_THEATRE_URL = (
     "Cinemark-Signature-Stadium-Kalispell-14/10338/"
 )
 
-DEFAULT_DAYS_AHEAD = 60  # UI can request up to 365 if you want
+DEFAULT_DAYS_AHEAD = 60  # UI can request up to 365
 
+# Stronger headers. Datacenter IPs get blocked more often, so we look like a normal browser.
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0 Safari/537.36"
     ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "close",
+    "DNT": "1",
+    "Upgrade-Insecure-Requests": "1",
 }
 
 # Cache: prevents repeated heavy scrapes when phone refreshes or multiple clients hit at once
-CACHE_TTL_SECONDS = 120
+CACHE_TTL_SECONDS = 180  # 3 minutes
 
-# Date label pattern seen on TributeMovies showtime lines (no year in the label)
-# Example: "Thu, Jan 15:"  (sometimes appears as <b>Thu, Jan 15:</b>)
+# Example: "Thu, Jan 15:" in <b> tags
 DATE_LABEL_RE = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s([A-Za-z]{3})\s(\d{1,2}):$")
 
 MONTHS = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
+
+# Timezone for generated_at (Render often runs UTC)
+MOUNTAIN_TZ = ZoneInfo("America/Denver") if ZoneInfo else None
+
+
+def now_local() -> datetime:
+    if MOUNTAIN_TZ:
+        return datetime.now(MOUNTAIN_TZ)
+    return datetime.now()
+
 
 def normalize_title(title: str) -> str:
     t = (title or "").lower()
@@ -45,139 +66,178 @@ def normalize_title(title: str) -> str:
 
 # ------------ SCRAPER (TRIBUTE MOVIES) ------------
 
-def fetch_tribute_html() -> Optional[str]:
-    try:
-        resp = requests.get(TRIBUTE_THEATRE_URL, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        return resp.text
-    except requests.RequestException as e:
-        print(f"[WARN] Failed to fetch TributeMovies page: {e}")
-        return None
+def _guess_year(today: date, month: int, day_num: int) -> int:
+    """
+    Tribute's date labels don't include year. Infer year by choosing the closest plausible date
+    near "today" (within ~9 months ahead, and also allow some past dates for "now playing").
+
+    Approach:
+    - Create candidate dates for this month/day in current year, previous year, next year
+    - Choose the one closest to today, but biased toward future (showtimes are usually future/near)
+    """
+    candidates = []
+    for y in (today.year - 1, today.year, today.year + 1):
+        try:
+            candidates.append(date(y, month, day_num))
+        except ValueError:
+            pass
+
+    if not candidates:
+        return today.year
+
+    # prefer candidates within [-60, +300] days window; else pick closest absolute
+    def score(d: date) -> Tuple[int, int]:
+        delta = (d - today).days
+        # primary: is it inside a reasonable showtime window?
+        in_window = 0 if (-60 <= delta <= 300) else 1
+        # secondary: absolute closeness
+        return (in_window, abs(delta))
+
+    best = min(candidates, key=score)
+    return best.year
 
 
-def _guess_year_for_month_day(today: date, month: int, day_num: int) -> int:
+def fetch_tribute_html() -> Tuple[Optional[str], Optional[str], Optional[int], Optional[str]]:
     """
-    TributeMovies labels don’t include year. We infer:
-    - default: current year
-    - if it looks like we crossed into next year (e.g., today is Dec and we see Jan/Feb), bump year
+    Returns (html, error, status_code, final_url)
+
+    We return rich error info so /api/debug_raw can tell us what actually happened.
     """
-    y = today.year
-    # If we're in late year and we see a small month, it's probably next year
-    if today.month >= 11 and month <= 2:
-        y += 1
-    return y
+    session = requests.Session()
+
+    last_err = None
+    last_status = None
+    last_url = None
+
+    for attempt in range(1, 4):
+        try:
+            resp = session.get(
+                TRIBUTE_THEATRE_URL,
+                headers=HEADERS,
+                timeout=25,
+                allow_redirects=True,
+            )
+            last_status = resp.status_code
+            last_url = resp.url
+
+            if resp.status_code != 200:
+                last_err = f"HTTP {resp.status_code}"
+                continue
+
+            text = resp.text or ""
+            if len(text) < 800:
+                # often indicates a block page / stub / error doc
+                last_err = f"HTML too short (len={len(text)})"
+                continue
+
+            return text, None, resp.status_code, resp.url
+
+        except requests.RequestException as e:
+            last_err = f"{type(e).__name__}: {e}"
+
+    return None, (last_err or "Unknown fetch failure"), last_status, last_url
 
 
 def parse_tribute_schedule(html: str) -> Dict[str, Dict]:
     """
-    Returns:
-      norm_title -> {
-        display_title: str,
-        dates: set[date]
-      }
+    Parse TributeMovies page and return:
+      norm_title -> { display_title: str, dates: set[date] }
 
-    TributeMovies structure (as shown in their page text):
-      - Movie title in <h2 class="media-heading">...</h2> :contentReference[oaicite:2]{index=2}
-      - Then showtime sections with lines like "Thu, Jan 8: ..." :contentReference[oaicite:3]{index=3}
+    Robust strategy (matches their HTML structure):
+      - Each movie title is in h2.media-heading (with an <a>)
+      - Its showtimes are in the next sibling div.ticketicons (after an <hr>)
     """
     soup = BeautifulSoup(html, "html.parser")
     today = date.today()
 
     movie_spans: Dict[str, Dict] = {}
-    movie_headers = soup.select("h2.media-heading")
 
-    if not movie_headers:
-        # Fallback: sometimes the title is still visible via heading structure
-        movie_headers = soup.find_all("h2")
+    # These are reliably the movie title headers
+    headers = soup.select("h2.media-heading")
+    if not headers:
+        # fallback if class changes
+        headers = soup.find_all("h2")
 
-    print(f"[INFO] Found {len(movie_headers)} movie headers on Tribute page")
-
-    for h2 in movie_headers:
+    for h2 in headers:
         title = h2.get_text(" ", strip=True)
-        if not title:
+        if not title or len(title) < 2:
             continue
 
-        # The page has a couple weird blank headers in the nav sometimes; filter aggressively
-        if len(title) < 2:
+        # avoid page junk headings that are not movies
+        if title.lower() in ("regular showtimes", "showtimes", "coming soon"):
             continue
 
         norm = normalize_title(title)
         if not norm:
             continue
 
-        info = movie_spans.setdefault(norm, {"display_title": title, "dates": set()})
+        # Find the movie container and its next ticketicons block
+        media_div = h2.find_parent("div", class_="media")
+        ticket_div = None
 
-        # Prefer the most "complete" title if it varies
+        if media_div:
+            # The page structure is usually: <div.media> ... </div> <hr> <div.ticketicons> ... </div>
+            # So from media_div, find next ticketicons sibling
+            # Sometimes hr is between, sometimes not.
+            sib = media_div
+            for _ in range(0, 6):
+                sib = sib.find_next_sibling()
+                if sib is None:
+                    break
+                if getattr(sib, "name", None) == "div" and "ticketicons" in (sib.get("class") or []):
+                    ticket_div = sib
+                    break
+
+        # Fallback: if we couldn't locate via siblings, try searching forward for the next ticketicons,
+        # but stop if another media-heading shows up.
+        if ticket_div is None:
+            for tag in h2.find_all_next():
+                if getattr(tag, "name", None) == "h2" and "media-heading" in (tag.get("class") or []):
+                    break
+                if getattr(tag, "name", None) == "div" and "ticketicons" in (tag.get("class") or []):
+                    ticket_div = tag
+                    break
+
+        if ticket_div is None:
+            # no showtimes block found for this title
+            continue
+
+        info = movie_spans.setdefault(norm, {"display_title": title, "dates": set()})
         if len(title) > len(info["display_title"]):
             info["display_title"] = title
 
-        # Walk forward until we hit the next movie header
-        for tag in h2.find_all_next():
-            if tag is h2:
+        # Date labels are <b>Thu, Jan 15:</b> etc.
+        for b in ticket_div.find_all("b"):
+            raw = b.get_text(" ", strip=True)
+            m = DATE_LABEL_RE.match(raw)
+            if not m:
                 continue
-            if getattr(tag, "name", None) == "h2" and "media-heading" in (tag.get("class") or []):
-                break
 
-            # Date labels are commonly in <b> tags like: <b>Thu, Jan 15:</b>
-            if getattr(tag, "name", None) == "b":
-                raw = tag.get_text(" ", strip=True)
-                m = DATE_LABEL_RE.match(raw)
-                if not m:
-                    continue
+            mon_abbr = m.group(2)
+            day_num = int(m.group(3))
+            month = MONTHS.get(mon_abbr)
+            if not month:
+                continue
 
-                mon_abbr = m.group(2)
-                day_num = int(m.group(3))
-                month = MONTHS.get(mon_abbr)
-                if not month:
-                    continue
+            year = _guess_year(today, month, day_num)
+            try:
+                d = date(year, month, day_num)
+            except ValueError:
+                continue
 
-                year = _guess_year_for_month_day(today, month, day_num)
-                try:
-                    d = date(year, month, day_num)
-                except ValueError:
-                    continue
-
-                info["dates"].add(d)
-
-            # Some showtime blocks might render date labels as plain text nodes, not <b>
-            # We'll catch those too.
-            if isinstance(tag, str):
-                txt = tag.strip()
-                if not txt:
-                    continue
-                # normalize “Thu, Jan 15:” if it appears as text
-                m = DATE_LABEL_RE.match(txt)
-                if not m:
-                    continue
-                mon_abbr = m.group(2)
-                day_num = int(m.group(3))
-                month = MONTHS.get(mon_abbr)
-                if not month:
-                    continue
-                year = _guess_year_for_month_day(today, month, day_num)
-                try:
-                    d = date(year, month, day_num)
-                except ValueError:
-                    continue
-                info["dates"].add(d)
+            info["dates"].add(d)
 
     return movie_spans
 
 
-def build_schedule(days_ahead: int) -> List[dict]:
+def build_schedule(days_ahead: int, spans: Dict[str, Dict]) -> List[dict]:
     """
-    Convert TributeMovies parsed data into your UI format.
-    Important: run_length_days is the count of distinct show dates within the window,
-    and first/last are min/max of those dates (not "continuous run").
+    Convert parsed raw spans into UI-ready objects for the requested horizon.
+    IMPORTANT: run_length_days counts distinct show dates (not continuous days).
     """
     today = date.today()
-    html = fetch_tribute_html()
-    if not html:
-        return []
-
-    spans = parse_tribute_schedule(html)
-
     horizon = today + timedelta(days=days_ahead)
+
     result: List[dict] = []
 
     for norm, info in spans.items():
@@ -185,20 +245,22 @@ def build_schedule(days_ahead: int) -> List[dict]:
         if not dates_set:
             continue
 
-        # Filter dates within [today - 365, horizon] so "already playing" still shows
-        filtered = sorted([d for d in dates_set if d <= horizon and d >= today - timedelta(days=365)])
+        # include a bit of past so "now playing" doesn't vanish if today isn't in labels for some reason
+        lower = today - timedelta(days=14)
+
+        filtered = sorted([d for d in dates_set if lower <= d <= horizon])
         if not filtered:
             continue
 
-        first = min(filtered)
-        last = max(filtered)
+        first = filtered[0]
+        last = filtered[-1]
 
         days_until = (first - today).days
         run_len = len(filtered)
 
         result.append(
             {
-                "title": info["display_title"],
+                "title": info.get("display_title") or "Untitled",
                 "first_date": first.isoformat(),
                 "last_date": last.isoformat(),
                 "days_until_start": days_until,
@@ -206,101 +268,117 @@ def build_schedule(days_ahead: int) -> List[dict]:
             }
         )
 
+    # default sort: soonest start then shortest run then title
     result.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
     return result
 
 
-# ------------ SIMPLE IN-MEMORY CACHE ------------
+# ------------ CACHE (RAW SPANS) ------------
 
 _cache = {
-    "fetched_at": None,   # datetime
-    "movies_full": None,  # List[dict] for a large horizon
-    "horizon_days": 0
+    "fetched_at": None,         # datetime
+    "spans": None,              # Dict[str, Dict] raw per-movie dates
+    "fetch_error": None,        # str
+    "fetch_status": None,       # int
+    "fetch_url": None,          # str
+    "html_len": None,           # int
 }
 
-def get_cached_schedule(days_ahead: int) -> List[dict]:
+
+def get_cached_spans() -> Tuple[Optional[Dict[str, Dict]], Optional[str]]:
     """
-    Cache strategy:
-    - scrape once for a big horizon (max requested today)
-    - reuse for subsequent requests within TTL
+    Scrape Tribute at most once per TTL, store RAW spans, recompute schedule per request.
     """
-    now = datetime.now()
+    now = now_local()
     fetched_at: Optional[datetime] = _cache["fetched_at"]
-    movies_full: Optional[List[dict]] = _cache["movies_full"]
-    horizon_days: int = _cache["horizon_days"]
 
-    if fetched_at and movies_full and (now - fetched_at).total_seconds() < CACHE_TTL_SECONDS and horizon_days >= days_ahead:
-        return _filter_to_days_ahead(movies_full, days_ahead)
+    if fetched_at and (now - fetched_at).total_seconds() < CACHE_TTL_SECONDS and _cache["spans"] is not None:
+        return _cache["spans"], None
 
-    # Fetch fresh at requested horizon
-    full = build_schedule(days_ahead)
+    html, err, status, final_url = fetch_tribute_html()
     _cache["fetched_at"] = now
-    _cache["movies_full"] = full
-    _cache["horizon_days"] = days_ahead
-    return full
+    _cache["fetch_error"] = err
+    _cache["fetch_status"] = status
+    _cache["fetch_url"] = final_url
+    _cache["html_len"] = len(html) if html else None
 
+    if not html:
+        _cache["spans"] = None
+        return None, (err or "Fetch failed")
 
-def _filter_to_days_ahead(movies: List[dict], days_ahead: int) -> List[dict]:
-    """
-    Our movie objects already have first/last based on the filtered set when scraped.
-    If cache horizon is larger than requested, we need to re-filter by days_until_start and last_date.
-    This is conservative: it may keep a movie if its first_date is within horizon and last_date within horizon.
-    """
-    today = date.today()
-    horizon = today + timedelta(days=days_ahead)
-    out = []
-    for m in movies:
-        try:
-            first = date.fromisoformat(m["first_date"])
-            last = date.fromisoformat(m["last_date"])
-        except Exception:
-            continue
-        # If its earliest showing is beyond horizon, skip
-        if first > horizon:
-            continue
-        # Keep it (it’s in range or already playing)
-        out.append(m)
-    out.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
-    return out
+    spans = parse_tribute_schedule(html)
+    _cache["spans"] = spans
+    return spans, None
 
 
 # ------------ FLASK APP ------------
 
 app = Flask(__name__)
+
+
 @app.route("/api/debug_raw")
 def api_debug_raw():
-    html = fetch_tribute_html()
+    """
+    Debug endpoint: tells you whether Render can fetch Tribute at all,
+    and whether the HTML looks like the real page.
+    """
+    html, err, status, final_url = fetch_tribute_html()
     if not html:
-        return jsonify({"ok": False, "error": "fetch_tribute_html returned None"}), 500
+        return jsonify({
+            "ok": False,
+            "error": err,
+            "status": status,
+            "final_url": final_url,
+        }), 500
 
-    # show a tiny slice so we can see if it's a bot wall or real page
+    head = html[:1600]
     return jsonify({
         "ok": True,
-        "url": TRIBUTE_THEATRE_URL,
+        "status": status,
+        "final_url": final_url,
         "len": len(html),
-        "head": html[:1200],
-        "has_media_heading": "media-heading" in html,
-        "has_ticketicons": "ticketicons" in html,
-        "has_Thu_Jan": "Thu, Jan" in html,
+        "has_media_heading": ("media-heading" in html),
+        "has_ticketicons": ("ticketicons" in html),
+        "sample_head": head,
     })
 
 
 @app.route("/api/showtimes")
 def api_showtimes():
-    """JSON API: /api/showtimes?days=N"""
+    """
+    JSON API: /api/showtimes?days=N
+    """
     try:
         days = int(request.args.get("days", DEFAULT_DAYS_AHEAD))
     except ValueError:
         days = DEFAULT_DAYS_AHEAD
 
-    # allow bigger now because Tribute already has sparse far-out dates
     days = max(1, min(days, 365))
 
-    data = get_cached_schedule(days)
+    spans, err = get_cached_spans()
+    if err or not spans:
+        # Return structured error payload so UI can display it
+        resp = jsonify({
+            "generated_at": now_local().isoformat(timespec="seconds"),
+            "days_ahead": days,
+            "movies": [],
+            "source": "TributeMovies",
+            "error": err or "No spans parsed",
+            "debug": {
+                "last_status": _cache.get("fetch_status"),
+                "last_url": _cache.get("fetch_url"),
+                "last_html_len": _cache.get("html_len"),
+            }
+        })
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        return resp, 503
+
+    data = build_schedule(days, spans)
 
     resp = jsonify(
         {
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "generated_at": now_local().isoformat(timespec="seconds"),
             "days_ahead": days,
             "movies": data,
             "source": "TributeMovies",
@@ -438,6 +516,14 @@ def index():
     }
     .status { font-size: 0.75rem; color: var(--muted); }
     .hidden-status { font-size: 0.7rem; color: #a5b4fc; }
+    .error-pill {
+      font-size: 0.72rem;
+      border: 1px solid rgba(248, 113, 113, 0.7);
+      color: #fecaca;
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(248, 113, 113, 0.08);
+    }
 
     .grid {
       margin-top: 1.1rem;
@@ -564,7 +650,7 @@ def index():
   <div class="wrap">
     <header>
       <h1>Kalispell Showtimes Radar</h1>
-      <div class="subtitle">TributeMovies (Fandango-powered) · updates whenever you refresh</div>
+      <div class="subtitle">TributeMovies · updates whenever you refresh</div>
 
       <div class="controls">
         <label>Days ahead <input id="daysInput" type="number" min="1" max="365" value="60"></label>
@@ -589,6 +675,7 @@ def index():
       <div class="status-row">
         <div class="status" id="status">Loading…</div>
         <div class="status hidden-status" id="hiddenStatus" style="display:none;"></div>
+        <div class="error-pill" id="errorPill" style="display:none;"></div>
       </div>
     </header>
 
@@ -614,19 +701,23 @@ def index():
   <script>
     const statusEl = document.getElementById('status');
     const hiddenStatusEl = document.getElementById('hiddenStatus');
+    const errorPillEl = document.getElementById('errorPill');
+
     const nowGrid = document.getElementById('nowGrid');
     const soonGrid = document.getElementById('soonGrid');
     const laterGrid = document.getElementById('laterGrid');
+
     const nowEmpty = document.getElementById('nowEmpty');
     const soonEmpty = document.getElementById('soonEmpty');
     const laterEmpty = document.getElementById('laterEmpty');
+
     const daysInput = document.getElementById('daysInput');
     const reloadBtn = document.getElementById('reloadBtn');
     const resetHiddenBtn = document.getElementById('resetHiddenBtn');
     const sortButtons = document.querySelectorAll('.sort-btn');
 
-    const SETTINGS_KEY = 'ksrSettingsV2';
-    const HIDDEN_KEY = 'ksrHiddenMoviesV2';
+    const SETTINGS_KEY = 'ksrSettingsV3';
+    const HIDDEN_KEY = 'ksrHiddenMoviesV3';
 
     function normalizeTitleJS(title) {
       return (title || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -702,7 +793,6 @@ def index():
       return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
-    // urgency based on last_date proximity and total run length
     function daysRemaining(movie) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
@@ -820,7 +910,7 @@ def index():
     }
 
     function sortMovies(list, mode) {
-      const movies = [...list];
+      const movies = [...(list || [])];
       if (mode === 'run') {
         movies.sort((a, b) => {
           if (a.run_length_days !== b.run_length_days) return a.run_length_days - b.run_length_days;
@@ -851,7 +941,7 @@ def index():
       soonEmpty.style.display = 'none';
       laterEmpty.style.display = 'none';
 
-      const sorted = sortMovies(cachedMovies || [], settings.sortMode);
+      const sorted = sortMovies(cachedMovies, settings.sortMode);
       const rendered = new Set();
 
       const now = [];
@@ -877,6 +967,9 @@ def index():
     }
 
     async function loadData() {
+      errorPillEl.style.display = 'none';
+      errorPillEl.textContent = '';
+
       const raw = parseInt(daysInput.value || String(settings.daysAhead || 60), 10);
       let days = isNaN(raw) ? 60 : raw;
       days = Math.min(365, Math.max(1, days));
@@ -892,14 +985,23 @@ def index():
 
       try {
         const res = await fetch(`/api/showtimes?days=${days}&t=${Date.now()}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+
         cachedMovies = data.movies || [];
+
+        if (!res.ok) {
+          const msg = data.error || `HTTP ${res.status}`;
+          errorPillEl.style.display = 'inline-block';
+          errorPillEl.textContent = msg;
+        }
+
         statusEl.textContent = `Generated at ${new Date(data.generated_at).toLocaleString()} · source: ${data.source}`;
         renderMovies();
       } catch (err) {
         console.error(err);
-        statusEl.textContent = 'Error talking to the scraper. (Network? Render sleeping? or Tribute changed layout.)';
+        statusEl.textContent = 'Error talking to the scraper.';
+        errorPillEl.style.display = 'inline-block';
+        errorPillEl.textContent = 'Network error (Render sleeping or blocked fetch).';
         nowEmpty.style.display = 'block';
         soonEmpty.style.display = 'block';
         laterEmpty.style.display = 'block';
@@ -946,4 +1048,3 @@ if __name__ == "__main__":
         local_ip = "127.0.0.1"
     print(f"Serving on http://{local_ip}:5000  (or http://localhost:5000)")
     app.run(host="0.0.0.0", port=5000)
-
