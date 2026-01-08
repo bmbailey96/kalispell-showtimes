@@ -1,56 +1,41 @@
 import re
 import socket
-import time
 from datetime import date, datetime, timedelta
+from typing import Optional, Dict, List, Set, Tuple
 
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request, Response
 
-# ---------------- CONFIG ----------------
+# ------------ CONFIG ------------
 
-# TributeMovies page that already lists each movie + every date it plays
-TRIBUTE_URL = (
+TRIBUTE_THEATRE_URL = (
     "https://www.tributemovies.com/cinema/Montana/Kalispell/"
     "Cinemark-Signature-Stadium-Kalispell-14/10338/"
 )
 
-DEFAULT_DAYS_AHEAD = 45  # UI can still request up to 120
+DEFAULT_DAYS_AHEAD = 60  # UI can request up to 365 if you want
 
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0 Safari/537.36"
-    )
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
-# Lines like: "Sat, Jan 17: 1:00pm"
-DATE_LINE_PATTERN = re.compile(
-    r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s+([A-Za-z]{3})\s+(\d{1,2})(?:,\s*(\d{4}))?\s*:",
-    re.IGNORECASE,
-)
+# Cache: prevents repeated heavy scrapes when phone refreshes or multiple clients hit at once
+CACHE_TTL_SECONDS = 120
+
+# Date label pattern seen on TributeMovies showtime lines (no year in the label)
+# Example: "Thu, Jan 15:"  (sometimes appears as <b>Thu, Jan 15:</b>)
+DATE_LABEL_RE = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s([A-Za-z]{3})\s(\d{1,2}):$")
 
 MONTHS = {
-    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
-    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
-
-# Titles we never want to treat as movies (very defensive)
-BANNED_TITLES_LOWER = {
-    "",
-    "read reviews",
-    "rate movie",
-    "watch trailer",
-    "regular showtimes",
-    "3d showtimes",
-    "filters",
-    "all showtimes",
-    "theaters nearby",
-    "about us",
-}
-
-# ---------------- HELPERS ----------------
 
 def normalize_title(title: str) -> str:
     t = (title or "").lower()
@@ -58,64 +43,11 @@ def normalize_title(title: str) -> str:
     return t
 
 
-def parse_showdate_line_to_date(line: str, today: date) -> date | None:
-    """
-    Convert "Sat, Jan 17:" to a real date.
-    Tribute showtime lines typically do NOT include the year.
-    We infer year with a simple rollover rule:
-      - Try current year.
-      - If that date is > ~300 days in the past relative to today, bump year + 1.
-      - If that date is > ~300 days in the future, bump year - 1 (rare, but safe).
-    """
-    m = DATE_LINE_PATTERN.match(line.strip())
-    if not m:
-        return None
+# ------------ SCRAPER (TRIBUTE MOVIES) ------------
 
-    mon_abbr = (m.group(2) or "").strip().lower()
-    day_num = int(m.group(3))
-    explicit_year = m.group(4)
-
-    month = MONTHS.get(mon_abbr)
-    if not month:
-        return None
-
-    if explicit_year:
-        year = int(explicit_year)
-        try:
-            return date(year, month, day_num)
-        except ValueError:
-            return None
-
-    # Infer year
-    year = today.year
+def fetch_tribute_html() -> Optional[str]:
     try:
-        d = date(year, month, day_num)
-    except ValueError:
-        return None
-
-    delta = (d - today).days
-    if delta < -300:
-        # e.g. today is Jan 8, and we see "Dec 28" -> likely Dec 28 THIS year? Actually that's in the future.
-        # This branch triggers when it looks far in the past; push forward a year.
-        try:
-            return date(year + 1, month, day_num)
-        except ValueError:
-            return None
-    if delta > 300:
-        # extremely unlikely, but keep it sane
-        try:
-            return date(year - 1, month, day_num)
-        except ValueError:
-            return None
-
-    return d
-
-
-# ---------------- SCRAPER (TributeMovies) ----------------
-
-def fetch_tribute_html() -> str | None:
-    try:
-        resp = requests.get(TRIBUTE_URL, headers=HEADERS, timeout=15)
+        resp = requests.get(TRIBUTE_THEATRE_URL, headers=HEADERS, timeout=20)
         resp.raise_for_status()
         return resp.text
     except requests.RequestException as e:
@@ -123,149 +55,150 @@ def fetch_tribute_html() -> str | None:
         return None
 
 
-def extract_movie_date_sets_from_tribute(html: str) -> dict[str, dict]:
+def _guess_year_for_month_day(today: date, month: int, day_num: int) -> int:
     """
-    Parse the TributeMovies HTML and return:
-      { normalized_title: { "display_title": "...", "dates": set[date] } }
+    TributeMovies labels don’t include year. We infer:
+    - default: current year
+    - if it looks like we crossed into next year (e.g., today is Dec and we see Jan/Feb), bump year
+    """
+    y = today.year
+    # If we're in late year and we see a small month, it's probably next year
+    if today.month >= 11 and month <= 2:
+        y += 1
+    return y
 
-    Structure on page is generally:
-      ## <a> Movie Title </a>
-      ...
-      ### Regular Showtimes
-      Thu, Jan 8: ...
-      Fri, Jan 9: ...
-      ...
-      ## <a> Next Movie </a>
+
+def parse_tribute_schedule(html: str) -> Dict[str, Dict]:
+    """
+    Returns:
+      norm_title -> {
+        display_title: str,
+        dates: set[date]
+      }
+
+    TributeMovies structure (as shown in their page text):
+      - Movie title in <h2 class="media-heading">...</h2> :contentReference[oaicite:2]{index=2}
+      - Then showtime sections with lines like "Thu, Jan 8: ..." :contentReference[oaicite:3]{index=3}
     """
     soup = BeautifulSoup(html, "html.parser")
     today = date.today()
 
-    movie_spans: dict[str, dict] = {}
+    movie_spans: Dict[str, Dict] = {}
+    movie_headers = soup.select("h2.media-heading")
 
-    # Tribute uses <h2> for movie titles (as seen in the page text)
-    for h2 in soup.find_all("h2"):
+    if not movie_headers:
+        # Fallback: sometimes the title is still visible via heading structure
+        movie_headers = soup.find_all("h2")
+
+    print(f"[INFO] Found {len(movie_headers)} movie headers on Tribute page")
+
+    for h2 in movie_headers:
         title = h2.get_text(" ", strip=True)
         if not title:
             continue
 
-        # Clean up weird whitespace
-        title = re.sub(r"\s+", " ", title).strip()
-
-        if title.lower() in BANNED_TITLES_LOWER:
-            continue
-
-        # Some pages include non-movie headers; require at least a couple letters
-        if len(re.sub(r"[^A-Za-z]+", "", title)) < 2:
-            continue
-
-        # Walk forward until the next <h2>, harvesting date lines
-        dates_for_movie: set[date] = set()
-
-        for sib in h2.next_siblings:
-            if getattr(sib, "name", None) == "h2":
-                break
-
-            # Collect text from this sibling chunk
-            chunk_text = ""
-            if isinstance(sib, str):
-                chunk_text = sib
-            else:
-                try:
-                    chunk_text = sib.get_text("\n", strip=True)
-                except Exception:
-                    chunk_text = ""
-
-            if not chunk_text:
-                continue
-
-            for raw_line in chunk_text.splitlines():
-                line = raw_line.strip()
-                if not line:
-                    continue
-                d = parse_showdate_line_to_date(line, today=today)
-                if d:
-                    dates_for_movie.add(d)
-
-        if not dates_for_movie:
-            # If it truly has no dated showtimes, it’s not useful for your math view.
-            # (Tribute usually has dates though.)
+        # The page has a couple weird blank headers in the nav sometimes; filter aggressively
+        if len(title) < 2:
             continue
 
         norm = normalize_title(title)
-        info = movie_spans.setdefault(
-            norm,
-            {"display_title": title, "dates": set()},
-        )
+        if not norm:
+            continue
 
-        # Prefer longer title text if we see variations
+        info = movie_spans.setdefault(norm, {"display_title": title, "dates": set()})
+
+        # Prefer the most "complete" title if it varies
         if len(title) > len(info["display_title"]):
             info["display_title"] = title
 
-        info["dates"].update(dates_for_movie)
+        # Walk forward until we hit the next movie header
+        for tag in h2.find_all_next():
+            if tag is h2:
+                continue
+            if getattr(tag, "name", None) == "h2" and "media-heading" in (tag.get("class") or []):
+                break
+
+            # Date labels are commonly in <b> tags like: <b>Thu, Jan 15:</b>
+            if getattr(tag, "name", None) == "b":
+                raw = tag.get_text(" ", strip=True)
+                m = DATE_LABEL_RE.match(raw)
+                if not m:
+                    continue
+
+                mon_abbr = m.group(2)
+                day_num = int(m.group(3))
+                month = MONTHS.get(mon_abbr)
+                if not month:
+                    continue
+
+                year = _guess_year_for_month_day(today, month, day_num)
+                try:
+                    d = date(year, month, day_num)
+                except ValueError:
+                    continue
+
+                info["dates"].add(d)
+
+            # Some showtime blocks might render date labels as plain text nodes, not <b>
+            # We'll catch those too.
+            if isinstance(tag, str):
+                txt = tag.strip()
+                if not txt:
+                    continue
+                # normalize “Thu, Jan 15:” if it appears as text
+                m = DATE_LABEL_RE.match(txt)
+                if not m:
+                    continue
+                mon_abbr = m.group(2)
+                day_num = int(m.group(3))
+                month = MONTHS.get(mon_abbr)
+                if not month:
+                    continue
+                year = _guess_year_for_month_day(today, month, day_num)
+                try:
+                    d = date(year, month, day_num)
+                except ValueError:
+                    continue
+                info["dates"].add(d)
 
     return movie_spans
 
 
-# ---------------- SCHEDULE BUILD + CACHE ----------------
-
-# Simple in-memory cache so multiple refreshes don’t slam TributeMovies
-_CACHE = {
-    "ts": 0.0,
-    "movie_spans": None,  # dict or None
-}
-CACHE_TTL_SECONDS = 10 * 60  # 10 minutes
-
-
-def get_cached_movie_spans(force: bool = False) -> dict[str, dict] | None:
-    now = time.time()
-    if not force and _CACHE["movie_spans"] is not None and (now - _CACHE["ts"]) < CACHE_TTL_SECONDS:
-        return _CACHE["movie_spans"]
-
-    html = fetch_tribute_html()
-    if not html:
-        return None
-
-    spans = extract_movie_date_sets_from_tribute(html)
-    _CACHE["ts"] = now
-    _CACHE["movie_spans"] = spans
-    print(f"[INFO] TributeMovies parsed: {len(spans)} unique titles cached.")
-    return spans
-
-
-def build_schedule(days_ahead: int, force_refresh: bool = False) -> list[dict]:
+def build_schedule(days_ahead: int) -> List[dict]:
     """
-    Build a list of movies with:
-      - the set of dates it actually plays (within the window)
-      - first_date, last_date
-      - run_length_days = number of distinct dates in that set
+    Convert TributeMovies parsed data into your UI format.
+    Important: run_length_days is the count of distinct show dates within the window,
+    and first/last are min/max of those dates (not "continuous run").
     """
     today = date.today()
-    cutoff = today + timedelta(days=days_ahead)
-
-    movie_spans = get_cached_movie_spans(force=force_refresh)
-    if not movie_spans:
+    html = fetch_tribute_html()
+    if not html:
         return []
 
-    result: list[dict] = []
+    spans = parse_tribute_schedule(html)
 
-    for norm, info in movie_spans.items():
-        dates_set: set[date] = info.get("dates", set())
+    horizon = today + timedelta(days=days_ahead)
+    result: List[dict] = []
+
+    for norm, info in spans.items():
+        dates_set: Set[date] = set(info.get("dates") or set())
         if not dates_set:
             continue
 
-        # Keep only dates inside the requested window (today .. today+days_ahead)
-        window_dates = sorted(d for d in dates_set if today <= d <= cutoff)
-        if not window_dates:
+        # Filter dates within [today - 365, horizon] so "already playing" still shows
+        filtered = sorted([d for d in dates_set if d <= horizon and d >= today - timedelta(days=365)])
+        if not filtered:
             continue
 
-        first = window_dates[0]
-        last = window_dates[-1]
-        run_len = len(window_dates)
+        first = min(filtered)
+        last = max(filtered)
+
         days_until = (first - today).days
+        run_len = len(filtered)
 
         result.append(
             {
-                "title": info.get("display_title", ""),
+                "title": info["display_title"],
                 "first_date": first.isoformat(),
                 "last_date": last.isoformat(),
                 "days_until_start": days_until,
@@ -273,40 +206,90 @@ def build_schedule(days_ahead: int, force_refresh: bool = False) -> list[dict]:
             }
         )
 
-    # Default sort: soonest start, then shorter run, then title
     result.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
     return result
 
 
-# ---------------- FLASK APP ----------------
+# ------------ SIMPLE IN-MEMORY CACHE ------------
+
+_cache = {
+    "fetched_at": None,   # datetime
+    "movies_full": None,  # List[dict] for a large horizon
+    "horizon_days": 0
+}
+
+def get_cached_schedule(days_ahead: int) -> List[dict]:
+    """
+    Cache strategy:
+    - scrape once for a big horizon (max requested today)
+    - reuse for subsequent requests within TTL
+    """
+    now = datetime.now()
+    fetched_at: Optional[datetime] = _cache["fetched_at"]
+    movies_full: Optional[List[dict]] = _cache["movies_full"]
+    horizon_days: int = _cache["horizon_days"]
+
+    if fetched_at and movies_full and (now - fetched_at).total_seconds() < CACHE_TTL_SECONDS and horizon_days >= days_ahead:
+        return _filter_to_days_ahead(movies_full, days_ahead)
+
+    # Fetch fresh at requested horizon
+    full = build_schedule(days_ahead)
+    _cache["fetched_at"] = now
+    _cache["movies_full"] = full
+    _cache["horizon_days"] = days_ahead
+    return full
+
+
+def _filter_to_days_ahead(movies: List[dict], days_ahead: int) -> List[dict]:
+    """
+    Our movie objects already have first/last based on the filtered set when scraped.
+    If cache horizon is larger than requested, we need to re-filter by days_until_start and last_date.
+    This is conservative: it may keep a movie if its first_date is within horizon and last_date within horizon.
+    """
+    today = date.today()
+    horizon = today + timedelta(days=days_ahead)
+    out = []
+    for m in movies:
+        try:
+            first = date.fromisoformat(m["first_date"])
+            last = date.fromisoformat(m["last_date"])
+        except Exception:
+            continue
+        # If its earliest showing is beyond horizon, skip
+        if first > horizon:
+            continue
+        # Keep it (it’s in range or already playing)
+        out.append(m)
+    out.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
+    return out
+
+
+# ------------ FLASK APP ------------
 
 app = Flask(__name__)
 
 
 @app.route("/api/showtimes")
 def api_showtimes():
-    """JSON API: /api/showtimes?days=N&force=1"""
+    """JSON API: /api/showtimes?days=N"""
     try:
         days = int(request.args.get("days", DEFAULT_DAYS_AHEAD))
     except ValueError:
         days = DEFAULT_DAYS_AHEAD
 
-    days = max(1, min(days, 120))
+    # allow bigger now because Tribute already has sparse far-out dates
+    days = max(1, min(days, 365))
 
-    force = request.args.get("force", "0") == "1"
-
-    data = build_schedule(days, force_refresh=force)
+    data = get_cached_schedule(days)
 
     resp = jsonify(
         {
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "days_ahead": days,
-            "source": "TributeMovies",
             "movies": data,
+            "source": "TributeMovies",
         }
     )
-
-    # Prevent caching differences between phone/desktop
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     return resp
@@ -314,7 +297,6 @@ def api_showtimes():
 
 @app.route("/")
 def index():
-    """Serve the phone-friendly HTML UI with urgency glow."""
     html = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -346,20 +328,10 @@ def index():
       margin: 0 auto;
       padding: 0.75rem 1rem 2rem;
     }
-    header {
-      padding: 0.75rem 0 0.5rem;
-    }
-    h1 {
-      font-size: 1.4rem;
-      margin: 0;
-      letter-spacing: 0.04em;
-    }
-    .subtitle {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 0.25rem;
-      line-height: 1.35;
-    }
+    header { padding: 0.75rem 0 0.5rem; }
+    h1 { font-size: 1.4rem; margin: 0; letter-spacing: 0.04em; }
+    .subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
     .controls {
       display: flex;
       align-items: center;
@@ -391,30 +363,15 @@ def index():
       font-size: 0.8rem;
       cursor: pointer;
     }
-    #reloadBtn {
-      background: var(--accent-soft);
-      color: var(--accent);
-    }
-    #reloadBtn:hover {
-      background: rgba(249, 115, 22, 0.3);
-    }
-    #forceBtn {
-      background: rgba(56, 189, 248, 0.14);
-      color: #7dd3fc;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-    }
-    #forceBtn:hover {
-      background: rgba(56, 189, 248, 0.22);
-    }
+    #reloadBtn { background: var(--accent-soft); color: var(--accent); }
+    #reloadBtn:hover { background: rgba(249, 115, 22, 0.3); }
     #resetHiddenBtn {
       background: transparent;
       border: 1px solid rgba(148, 163, 184, 0.4);
       color: var(--muted);
     }
-    #resetHiddenBtn:hover {
-      border-color: rgba(248, 250, 252, 0.7);
-      color: #e5e7eb;
-    }
+    #resetHiddenBtn:hover { border-color: rgba(248, 250, 252, 0.7); color: #e5e7eb; }
+
     .sort-row {
       display: flex;
       align-items: center;
@@ -423,9 +380,6 @@ def index():
       flex-wrap: wrap;
       font-size: 0.75rem;
       color: var(--muted);
-    }
-    .sort-label {
-      opacity: 0.85;
     }
     .sort-buttons {
       display: inline-flex;
@@ -441,13 +395,9 @@ def index():
       background: transparent;
       color: var(--muted);
     }
-    .sort-btn + .sort-btn {
-      border-left: 1px solid rgba(148, 163, 184, 0.4);
-    }
-    .sort-btn.active-sort {
-      background: var(--accent);
-      color: #020617;
-    }
+    .sort-btn + .sort-btn { border-left: 1px solid rgba(148, 163, 184, 0.4); }
+    .sort-btn.active-sort { background: var(--accent); color: #020617; }
+
     .pill-row {
       display: flex;
       gap: 0.5rem;
@@ -461,9 +411,8 @@ def index():
       border: 1px solid rgba(148, 163, 184, 0.3);
       color: var(--muted);
     }
-    .pill strong {
-      color: var(--accent);
-    }
+    .pill strong { color: var(--accent); }
+
     .status-row {
       display: flex;
       flex-wrap: wrap;
@@ -471,14 +420,9 @@ def index():
       gap: 0.5rem;
       margin-top: 0.55rem;
     }
-    .status {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-    .hidden-status {
-      font-size: 0.7rem;
-      color: #a5b4fc;
-    }
+    .status { font-size: 0.75rem; color: var(--muted); }
+    .hidden-status { font-size: 0.7rem; color: #a5b4fc; }
+
     .grid {
       margin-top: 1.1rem;
       display: flex;
@@ -514,11 +458,7 @@ def index():
       align-items: center;
       gap: 0.5rem;
     }
-    .title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
+    .title { font-size: 1.05rem; font-weight: 600; letter-spacing: 0.01em; }
     .bucket-tag {
       font-size: 0.65rem;
       padding: 0.2rem 0.55rem;
@@ -537,18 +477,10 @@ def index():
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
-    .card-meta {
-      margin-top: 0.25rem;
-      font-size: 0.8rem;
-    }
-    .meta-highlight {
-      color: var(--accent);
-      font-weight: 500;
-    }
-    .meta-secondary {
-      color: var(--muted);
-      margin-top: 0.05rem;
-    }
+    .card-meta { margin-top: 0.25rem; font-size: 0.8rem; }
+    .meta-highlight { color: var(--accent); font-weight: 500; }
+    .meta-secondary { color: var(--muted); margin-top: 0.05rem; }
+
     .run-row {
       margin-top: 0.3rem;
       display: inline-flex;
@@ -583,11 +515,8 @@ def index():
       border: 1px solid rgba(248, 113, 113, 0.85);
       color: #fecaca;
     }
-    .hide-row {
-      margin-top: 0.25rem;
-      display: flex;
-      justify-content: flex-end;
-    }
+
+    .hide-row { margin-top: 0.25rem; display: flex; justify-content: flex-end; }
     .hide-btn {
       background: transparent;
       border: none;
@@ -597,9 +526,8 @@ def index():
       padding: 0;
       cursor: pointer;
     }
-    .hide-btn:hover {
-      color: #fca5a5;
-    }
+    .hide-btn:hover { color: #fca5a5; }
+
     .section-title {
       margin-top: 1.4rem;
       font-size: 0.78rem;
@@ -609,16 +537,10 @@ def index():
       border-top: 1px solid rgba(31, 41, 55, 0.9);
       padding-top: 0.55rem;
     }
-    .empty {
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
+    .empty { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); }
+
     @media (min-width: 700px) {
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -626,30 +548,28 @@ def index():
   <div class="wrap">
     <header>
       <h1>Kalispell Showtimes Radar</h1>
-      <div class="subtitle">
-        Source: TributeMovies (single-page scrape) · refresh to re-pull the schedule
-      </div>
+      <div class="subtitle">TributeMovies (Fandango-powered) · updates whenever you refresh</div>
+
       <div class="controls">
-        <label>
-          Days ahead
-          <input id="daysInput" type="number" min="1" max="120" value="45">
-        </label>
+        <label>Days ahead <input id="daysInput" type="number" min="1" max="365" value="60"></label>
         <button id="reloadBtn">Refresh</button>
-        <button id="forceBtn" title="Ignore the 10-minute server cache and re-fetch right now">Force re-scrape</button>
         <button id="resetHiddenBtn">Reset hidden</button>
       </div>
+
       <div class="sort-row">
-        <span class="sort-label">Sort by</span>
+        <span>Sort by</span>
         <div class="sort-buttons">
           <button class="sort-btn" data-mode="start">Soonest</button>
           <button class="sort-btn" data-mode="run">Shortest run</button>
         </div>
       </div>
+
       <div class="pill-row">
         <div class="pill"><strong>Now</strong> = already playing</div>
         <div class="pill"><strong>Soon</strong> = starts ≤ 14 days</div>
         <div class="pill"><strong>Later</strong> = starts > 14 days</div>
       </div>
+
       <div class="status-row">
         <div class="status" id="status">Loading…</div>
         <div class="status hidden-status" id="hiddenStatus" style="display:none;"></div>
@@ -659,7 +579,7 @@ def index():
     <div id="section-now">
       <div class="section-title">Now Playing</div>
       <div class="grid" id="nowGrid"></div>
-      <div class="empty" id="nowEmpty" style="display:none;">Nothing currently running? That feels fake, but okay.</div>
+      <div class="empty" id="nowEmpty" style="display:none;">Nothing currently running. Either the world ended or the data is down.</div>
     </div>
 
     <div id="section-soon">
@@ -686,35 +606,30 @@ def index():
     const laterEmpty = document.getElementById('laterEmpty');
     const daysInput = document.getElementById('daysInput');
     const reloadBtn = document.getElementById('reloadBtn');
-    const forceBtn = document.getElementById('forceBtn');
     const resetHiddenBtn = document.getElementById('resetHiddenBtn');
     const sortButtons = document.querySelectorAll('.sort-btn');
 
-    const SETTINGS_KEY = 'ksrSettingsV1';
-    const HIDDEN_KEY = 'ksrHiddenMoviesV1';
+    const SETTINGS_KEY = 'ksrSettingsV2';
+    const HIDDEN_KEY = 'ksrHiddenMoviesV2';
 
     function normalizeTitleJS(title) {
-      return (title || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '');
+      return (title || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
     }
 
     function loadSettings() {
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return { daysAhead: 45, sortMode: 'start' };
+        if (!raw) return { daysAhead: 60, sortMode: 'start' };
         const obj = JSON.parse(raw);
         return {
-          daysAhead: typeof obj.daysAhead === 'number' ? obj.daysAhead : 45,
+          daysAhead: typeof obj.daysAhead === 'number' ? obj.daysAhead : 60,
           sortMode: obj.sortMode === 'run' ? 'run' : 'start',
         };
-      } catch (e) {
-        return { daysAhead: 45, sortMode: 'start' };
-      }
+      } catch { return { daysAhead: 60, sortMode: 'start' }; }
     }
 
     function saveSettings() {
-      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
     }
 
     function loadHidden() {
@@ -724,13 +639,11 @@ def index():
         const arr = JSON.parse(raw);
         if (!Array.isArray(arr)) return new Set();
         return new Set(arr);
-      } catch (e) {
-        return new Set();
-      }
+      } catch { return new Set(); }
     }
 
     function saveHidden() {
-      try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(hiddenSet))); } catch (e) {}
+      try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(hiddenSet))); } catch {}
     }
 
     let settings = loadSettings();
@@ -740,20 +653,15 @@ def index():
     function applySortModeUI() {
       sortButtons.forEach(btn => {
         const mode = btn.dataset.mode || 'start';
-        if (mode === settings.sortMode) btn.classList.add('active-sort');
-        else btn.classList.remove('active-sort');
+        btn.classList.toggle('active-sort', mode === settings.sortMode);
       });
     }
 
     function updateHiddenStatus() {
-      const count = hiddenSet.size;
-      if (!count) {
-        hiddenStatusEl.style.display = 'none';
-        hiddenStatusEl.textContent = '';
-        return;
-      }
+      const c = hiddenSet.size;
+      if (!c) { hiddenStatusEl.style.display = 'none'; hiddenStatusEl.textContent = ''; return; }
       hiddenStatusEl.style.display = 'block';
-      hiddenStatusEl.textContent = count === 1 ? '1 movie hidden' : count + ' movies hidden';
+      hiddenStatusEl.textContent = c === 1 ? '1 movie hidden' : `${c} movies hidden`;
     }
 
     function bucketTag(daysUntil) {
@@ -770,18 +678,15 @@ def index():
 
     function humanRunLength(run) {
       if (run === 1) return 'Plays 1 day only';
-      return `Plays for ${run} days total`;
+      return `Plays on ${run} day(s) total`;
     }
 
     function prettyDate(iso) {
       const d = new Date(iso + 'T12:00:00');
-      return d.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
+      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
+    // urgency based on last_date proximity and total run length
     function daysRemaining(movie) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
@@ -794,8 +699,8 @@ def index():
       const remaining = daysRemaining(movie);
       const run = movie.run_length_days;
 
-      if (remaining <= 1) return 'red';          // final chance (today or tomorrow)
-      if (run <= 3 || remaining <= 5) return 'yellow'; // limited or leaving soon
+      if (remaining <= 1) return 'red';
+      if (run <= 3 || remaining <= 5) return 'yellow';
       return 'none';
     }
 
@@ -839,7 +744,6 @@ def index():
 
       const line1 = document.createElement('div');
       line1.innerHTML = `<span class="meta-highlight">${humanDaysUntil(movie.days_until_start)}</span>`;
-
       const line2 = document.createElement('div');
       line2.className = 'meta-secondary';
       line2.textContent = humanRunLength(movie.run_length_days);
@@ -877,7 +781,6 @@ def index():
       const normKey = normalizeTitleJS(movie.title);
       const hideRow = document.createElement('div');
       hideRow.className = 'hide-row';
-
       const hideBtn = document.createElement('button');
       hideBtn.className = 'hide-btn';
       hideBtn.textContent = 'Hide';
@@ -888,7 +791,7 @@ def index():
         card.remove();
         updateEmptyMessages();
         updateHiddenStatus();
-        statusEl.textContent = 'Hidden "' + movie.title + '".';
+        statusEl.textContent = `Hidden "${movie.title}".`;
       });
       hideRow.appendChild(hideBtn);
 
@@ -932,13 +835,8 @@ def index():
       soonEmpty.style.display = 'none';
       laterEmpty.style.display = 'none';
 
-      if (!cachedMovies || !cachedMovies.length) {
-        updateEmptyMessages();
-        return;
-      }
-
-      const sorted = sortMovies(cachedMovies, settings.sortMode);
-      const renderedSet = new Set();
+      const sorted = sortMovies(cachedMovies || [], settings.sortMode);
+      const rendered = new Set();
 
       const now = [];
       const soon = [];
@@ -947,8 +845,8 @@ def index():
       for (const m of sorted) {
         const key = normalizeTitleJS(m.title);
         if (hiddenSet.has(key)) continue;
-        if (renderedSet.has(key)) continue;
-        renderedSet.add(key);
+        if (rendered.has(key)) continue;
+        rendered.add(key);
 
         if (m.days_until_start <= 0) now.push(m);
         else if (m.days_until_start <= 14) soon.push(m);
@@ -962,10 +860,11 @@ def index():
       updateEmptyMessages();
     }
 
-    async function loadData(force) {
-      const raw = parseInt(daysInput.value || String(settings.daysAhead || 45), 10);
-      let days = isNaN(raw) ? 45 : raw;
-      days = Math.min(120, Math.max(1, days));
+    async function loadData() {
+      const raw = parseInt(daysInput.value || String(settings.daysAhead || 60), 10);
+      let days = isNaN(raw) ? 60 : raw;
+      days = Math.min(365, Math.max(1, days));
+
       daysInput.value = String(days);
       settings.daysAhead = days;
       saveSettings();
@@ -974,31 +873,24 @@ def index():
       nowGrid.innerHTML = '';
       soonGrid.innerHTML = '';
       laterGrid.innerHTML = '';
-      nowEmpty.style.display = 'none';
-      soonEmpty.style.display = 'none';
-      laterEmpty.style.display = 'none';
 
       try {
-        const forceFlag = force ? '&force=1' : '';
-        const res = await fetch(`/api/showtimes?days=${days}${forceFlag}&t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`/api/showtimes?days=${days}&t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-
         cachedMovies = data.movies || [];
-        statusEl.textContent = `Generated at ${new Date(data.generated_at).toLocaleString()} · window: ${data.days_ahead} days · source: ${data.source || 'unknown'}`;
-
+        statusEl.textContent = `Generated at ${new Date(data.generated_at).toLocaleString()} · source: ${data.source}`;
         renderMovies();
       } catch (err) {
         console.error(err);
-        statusEl.textContent = 'Error talking to the scraper. Server asleep? Or the source site changed?';
+        statusEl.textContent = 'Error talking to the scraper. (Network? Render sleeping? or Tribute changed layout.)';
         nowEmpty.style.display = 'block';
         soonEmpty.style.display = 'block';
         laterEmpty.style.display = 'block';
       }
     }
 
-    reloadBtn.addEventListener('click', () => loadData(false));
-    forceBtn.addEventListener('click', () => loadData(true));
+    reloadBtn.addEventListener('click', loadData);
 
     resetHiddenBtn.addEventListener('click', () => {
       hiddenSet.clear();
@@ -1010,22 +902,18 @@ def index():
 
     sortButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode || 'start';
-        settings.sortMode = mode;
+        settings.sortMode = btn.dataset.mode || 'start';
         saveSettings();
         applySortModeUI();
-        statusEl.textContent = mode === 'run'
-          ? 'Sorting by shortest runs.'
-          : 'Sorting by soonest start.';
-        renderMovies();
+        renderMovies(); // resort cached, no refetch
       });
     });
 
     window.addEventListener('load', () => {
-      daysInput.value = String(settings.daysAhead || 45);
+      daysInput.value = String(settings.daysAhead || 60);
       applySortModeUI();
       updateHiddenStatus();
-      loadData(false);
+      loadData();
     });
   </script>
 </body>
