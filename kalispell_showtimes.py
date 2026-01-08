@@ -267,6 +267,22 @@ def _filter_to_days_ahead(movies: List[dict], days_ahead: int) -> List[dict]:
 # ------------ FLASK APP ------------
 
 app = Flask(__name__)
+@app.route("/api/debug_raw")
+def api_debug_raw():
+    html = fetch_tribute_html()
+    if not html:
+        return jsonify({"ok": False, "error": "fetch_tribute_html returned None"}), 500
+
+    # show a tiny slice so we can see if it's a bot wall or real page
+    return jsonify({
+        "ok": True,
+        "url": TRIBUTE_THEATRE_URL,
+        "len": len(html),
+        "head": html[:1200],
+        "has_media_heading": "media-heading" in html,
+        "has_ticketicons": "ticketicons" in html,
+        "has_Thu_Jan": "Thu, Jan" in html,
+    })
 
 
 @app.route("/api/showtimes")
@@ -930,3 +946,4 @@ if __name__ == "__main__":
         local_ip = "127.0.0.1"
     print(f"Serving on http://{local_ip}:5000  (or http://localhost:5000)")
     app.run(host="0.0.0.0", port=5000)
+
