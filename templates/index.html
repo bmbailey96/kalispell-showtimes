@@ -18,16 +18,19 @@
       --beadDim:#0f0f19;
       --accent:#9ad1ff;
 
-      /* leaving soon badge */
+      /* badges */
       --warnBg:#2a0f16;
       --warnBorder:#5a1b2a;
       --warnText:#ffd6de;
+
+      --shortBg:#1a1a12;
+      --shortBorder:#4b4420;
+      --shortText:#fff1b8;
 
       /* today bead */
       --todayBg:#1d2a3a;
       --todayBorder:#6bb8ff;
 
-      /* subtle shadow */
       --shadow: 0 8px 24px rgba(0,0,0,.35);
     }
 
@@ -84,9 +87,7 @@
       background: rgba(154,209,255,.10);
     }
 
-    .btn.sort{
-      background:#161625;
-    }
+    .btn.sort{ background:#161625; }
     .btn.sort.active{
       border-color: rgba(154,209,255,.7);
       background: rgba(154,209,255,.14);
@@ -119,9 +120,7 @@
       gap:12px;
     }
     @media (min-width: 860px){
-      .grid{
-        grid-template-columns: 1fr 1fr;
-      }
+      .grid{ grid-template-columns: 1fr 1fr; }
     }
 
     .card{
@@ -155,7 +154,7 @@
       align-items:center;
       flex-wrap:wrap;
       justify-content:flex-end;
-      max-width: 45%;
+      max-width: 52%;
     }
 
     .badge{
@@ -175,12 +174,19 @@
       background:var(--warnBg);
       border-color:var(--warnBorder);
       color:var(--warnText);
-      font-weight:600;
+      font-weight:700;
+      letter-spacing:.2px;
     }
 
-    .badge.small{
-      opacity:.75;
+    .badge.short{
+      background:var(--shortBg);
+      border-color:var(--shortBorder);
+      color:var(--shortText);
+      font-weight:700;
+      letter-spacing:.2px;
     }
+
+    .badge.small{ opacity:.75; }
 
     .timeline{
       display:flex;
@@ -235,9 +241,6 @@
       border-color: var(--todayBorder);
       box-shadow: 0 0 0 2px rgba(107,184,255,.12);
     }
-    .bead.future{
-      opacity: .95;
-    }
 
     .bead:hover{
       border-color: rgba(154,209,255,.65);
@@ -264,15 +267,13 @@
       white-space:pre-wrap;
       box-shadow: var(--shadow);
     }
-
-    a{ color:var(--accent); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      A little timeline machine. Each bead is a day the movie is listed. Minimal color except when something is about to vanish.
+      Each bead is an actual listed date (not a filled-in range). Minimal color unless something is about to disappear.
     </div>
 
     <div class="controls">
@@ -315,36 +316,21 @@
       days_ahead: 60
     };
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-
     function parseISODate(s){
-      // s like "2026-01-12"
       const [y,m,d] = s.split("-").map(Number);
       return new Date(y, m-1, d);
     }
 
-    function formatShortMonth(d){
-      return d.toLocaleString(undefined, { month: "short" });
-    }
-
-    function formatMonthTag(d){
-      // "Jan 2026"
-      const mon = d.toLocaleString(undefined, { month: "short" });
-      return `${mon} ${d.getFullYear()}`;
-    }
-
-    function addDays(dt, n){
-      const x = new Date(dt.getTime());
-      x.setDate(x.getDate() + n);
-      return x;
-    }
-
     function daysBetween(a, b){
-      // whole-day difference b - a
       const ms = 24*60*60*1000;
       const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
       const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
       return Math.round((ub - ua)/ms);
+    }
+
+    function formatMonthTag(d){
+      const mon = d.toLocaleString(undefined, { month: "short" });
+      return `${mon} ${d.getFullYear()}`;
     }
 
     function escapeHtml(s) {
@@ -360,10 +346,7 @@
       render();
     }
 
-    sortButtons.forEach(btn => {
-      btn.addEventListener("click", () => setSort(btn.dataset.sort));
-    });
-
+    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
     onlySoonEl.addEventListener("change", render);
 
     async function load(){
@@ -412,14 +395,29 @@
     document.getElementById("refresh").addEventListener("click", load);
     document.getElementById("debug").addEventListener("click", debugFetch);
 
+    function hasDates(movie){
+      return Array.isArray(movie.dates) && movie.dates.length > 0;
+    }
+
+    function lastListedDate(movie){
+      if(hasDates(movie)){
+        return parseISODate(movie.dates[movie.dates.length - 1]);
+      }
+      return parseISODate(movie.last_date);
+    }
+
     function leavingSoon(movie, today){
-      const last = parseISODate(movie.last_date);
+      const last = lastListedDate(movie);
       const daysLeft = daysBetween(today, last);
-      return daysLeft <= 3; // includes negative if it already ended, but those won't usually show
+      return daysLeft <= 3;
+    }
+
+    function shortRun(movie){
+      const n = hasDates(movie) ? movie.dates.length : (movie.run_length_days || 0);
+      return n <= 3;
     }
 
     function sortMovies(movies){
-      const today = new Date();
       const list = movies.slice();
 
       if(state.sort === "az"){
@@ -438,18 +436,17 @@
       }
 
       if(state.sort === "soon"){
-        // soon = starting soon (future soon first), then currently showing
         list.sort((a,b) => {
           const af = a.days_until_start;
           const bf = b.days_until_start;
-          const aKey = (af < 0) ? 9999 : af; // past starts go last
+          const aKey = (af < 0) ? 9999 : af;
           const bKey = (bf < 0) ? 9999 : bf;
           return (aKey - bKey) || (a.run_length_days - b.run_length_days) || (a.title||"").localeCompare(b.title||"");
         });
         return list;
       }
 
-      // default "now": currently showing first (days_until_start <= 0), then upcoming soonest
+      // default "now"
       list.sort((a,b) => {
         const aNow = a.days_until_start <= 0 ? 0 : 1;
         const bNow = b.days_until_start <= 0 ? 0 : 1;
@@ -461,42 +458,35 @@
       return list;
     }
 
-    function buildBeads(movie, today){
-      const first = parseISODate(movie.first_date);
-      const last = parseISODate(movie.last_date);
-      const totalDays = daysBetween(first, last) + 1;
-
+    function buildBeadsFromDates(movie, today){
+      const dates = hasDates(movie) ? movie.dates : [];
       const beads = [];
       const monthTags = [];
+      let lastMonthKey = null;
 
-      let current = new Date(first.getTime());
-      let lastMonth = null;
-
-      for(let i=0; i<totalDays; i++){
-        const y = current.getFullYear();
-        const m = current.getMonth();
-        const d = current.getDate();
+      for(const iso of dates){
+        const dt = parseISODate(iso);
+        const y = dt.getFullYear();
+        const m = dt.getMonth();
+        const d = dt.getDate();
 
         const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
-        const isPast = (daysBetween(current, today) < 0); // current < today
-        const isFuture = (daysBetween(today, current) > 0);
+        const isPast = (daysBetween(dt, today) < 0);
 
         const monthKey = `${y}-${m}`;
-        if(monthKey !== lastMonth){
-          monthTags.push(formatMonthTag(current));
-          lastMonth = monthKey;
+        if(monthKey !== lastMonthKey){
+          monthTags.push(formatMonthTag(dt));
+          lastMonthKey = monthKey;
         }
 
         beads.push({
           label: String(d),
-          title: `${formatShortMonth(current)} ${d}, ${y}`,
-          cls: "bead" + (isPast ? " dim" : (isToday ? " today" : (isFuture ? " future" : "")))
+          title: dt.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", weekday: "short" }),
+          cls: "bead" + (isPast ? " dim" : (isToday ? " today" : ""))
         });
-
-        current = addDays(current, 1);
       }
 
-      return { beads, monthTags, totalDays };
+      return { beads, monthTags, totalDays: dates.length };
     }
 
     function cardHTML(movie){
@@ -506,13 +496,7 @@
       const onlySoon = onlySoonEl.checked;
       if(onlySoon && !soon) return "";
 
-      const first = parseISODate(movie.first_date);
-      const last = parseISODate(movie.last_date);
-
-      const daysLeft = daysBetween(today, last);
       const startsIn = movie.days_until_start;
-
-      const { beads, monthTags, totalDays } = buildBeads(movie, today);
 
       let startText = "";
       if(startsIn === 0) startText = "starts today";
@@ -520,14 +504,16 @@
       else if(startsIn > 1) startText = `starts in ${startsIn} days`;
       else startText = `already started`;
 
+      const last = lastListedDate(movie);
+      const daysLeft = daysBetween(today, last);
+
       let endText = "";
       if(daysLeft === 0) endText = "ends today";
       else if(daysLeft === 1) endText = "ends tomorrow";
       else if(daysLeft > 1) endText = `ends in ${daysLeft} days`;
       else endText = `ended ${Math.abs(daysLeft)} days ago`;
 
-      const badgeSoon = soon ? `<span class="badge warn">LEAVING SOON</span>` : "";
-      const badgeRun = `<span class="badge small">${totalDays} day${totalDays===1?"":"s"}</span>`;
+      const { beads, monthTags, totalDays } = buildBeadsFromDates(movie, today);
 
       // Month tags: show up to 2, then +N
       let monthRow = "";
@@ -539,12 +525,17 @@
 
       const beadsHTML = beads.map(b => `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`).join("");
 
+      const badgeSoon = soon ? `<span class="badge warn">LEAVING SOON</span>` : "";
+      const badgeShort = shortRun(movie) ? `<span class="badge short">SHORT RUN</span>` : "";
+      const badgeRun = `<span class="badge small">${totalDays} day${totalDays===1?"":"s"}</span>`;
+
       return `
         <div class="card">
           <div class="titleRow">
             <h2 class="title">${escapeHtml(movie.title)}</h2>
             <div class="badges">
               ${badgeSoon}
+              ${badgeShort}
               ${badgeRun}
             </div>
           </div>
@@ -563,7 +554,6 @@
     }
 
     function render(){
-      const today = new Date();
       const movies = sortMovies(state.movies);
 
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
