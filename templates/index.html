@@ -72,8 +72,20 @@
     }
 
     label{ opacity:.85; font-size:13px; }
+
     input[type="number"]{
       width:92px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--beadBorder);
+      background:var(--beadDim);
+      color:var(--text);
+      outline:none;
+    }
+
+    .search{
+      width: 220px;
+      max-width: 48vw;
       padding:8px 10px;
       border-radius:10px;
       border:1px solid var(--beadBorder);
@@ -98,6 +110,12 @@
     .btn.primary{
       border-color: rgba(154,209,255,.6);
       background: rgba(154,209,255,.10);
+    }
+
+    .btn.sort{ background:#161625; }
+    .btn.sort.active{
+      border-color: rgba(154,209,255,.7);
+      background: rgba(154,209,255,.14);
     }
 
     .toggle{
@@ -368,15 +386,40 @@
       flex-wrap:wrap;
     }
 
+    /* ---------- MUTED: hard collapse ---------- */
     .mutedCard{
-      padding: 12px 14px;
+      padding: 10px 12px;
+      opacity: .38;
+      filter: saturate(.55);
     }
+    .mutedCard .cardRow{
+      align-items:center;
+    }
+    .mutedCard .posterWrap,
+    .mutedCard .badges,
+    .mutedCard .planRow,
     .mutedCard .timeline,
     .mutedCard .footerRow{
-      display:none;
+      display:none !important;
     }
-    .mutedCard .planRow{
-      margin: 6px 0 2px;
+    .mutedCard .titleRow{
+      margin:0;
+    }
+    .mutedCard .title{
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .mutedCard .muteRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .mutedCard .muteActions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
 
     .error{
@@ -394,7 +437,7 @@
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      Posters from TMDB. Mute collapses a title into a slim “reminder row” instead of deleting it.
+      Posters from TMDB. Mute collapses a title into a dim single-line row so it stops taking your attention.
     </div>
 
     <div class="controls">
@@ -403,6 +446,8 @@
 
       <button class="btn primary" id="refresh">Refresh</button>
       <button class="btn" id="debug">Debug fetch</button>
+
+      <input id="q" class="search" placeholder="search titles…" />
 
       <label class="toggle" title="Group into Now / Next 7 Days / Later / One Night">
         <input id="grouped" type="checkbox" checked />
@@ -413,6 +458,13 @@
         <input id="onlySoon" type="checkbox" />
         only leaving soon
       </label>
+
+      <span style="flex:1"></span>
+
+      <button class="btn sort active" data-sort="plan">Plan</button>
+      <button class="btn sort" data-sort="az">A Z</button>
+      <button class="btn sort" data-sort="long">Long</button>
+      <button class="btn sort" data-sort="short">Short</button>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -425,10 +477,13 @@
     const daysEl = document.getElementById("days");
     const onlySoonEl = document.getElementById("onlySoon");
     const groupedEl = document.getElementById("grouped");
+    const qEl = document.getElementById("q");
+
+    const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
 
     // ---------- persistence ----------
-    const HIDDEN_KEY = "kalispell_hidden_titles_v2";
-    const MUTED_KEY  = "kalispell_muted_titles_v2";
+    const HIDDEN_KEY = "kalispell_hidden_titles_v3";
+    const MUTED_KEY  = "kalispell_muted_titles_v3";
 
     function loadSet(key){
       try{
@@ -505,7 +560,6 @@
     const posterCache = new Map(); // title -> poster_url|null
     async function fetchPoster(title){
       if(posterCache.has(title)) return posterCache.get(title);
-
       try{
         const res = await fetch(`/api/poster?title=${encodeURIComponent(title)}`, { cache: "no-store" });
         const data = await res.json();
@@ -531,16 +585,13 @@
             active++;
 
             const title = img.getAttribute("data-title");
-            const ph = img.previousElementSibling; // .posterPh
+            const ph = img.previousElementSibling;
 
             fetchPoster(title).then((url)=>{
               if(url){
                 img.src = url;
                 img.onload = () => img.classList.add("loaded");
-                img.onerror = () => {};
                 if(ph) ph.style.display = "none";
-              }else{
-                // keep placeholder
               }
             }).finally(()=>{
               active--;
@@ -596,7 +647,6 @@
     function classify(movie){
       const n = runCount(movie);
       const span = spanDays(movie);
-
       if(n === 1) return "one";
       if(n <= 3 && span >= 4) return "event";
       if(n <= 3 && span <= 3) return "short";
@@ -641,10 +691,50 @@
       return { beads, monthTags };
     }
 
+    function matchesSearch(movie){
+      const q = (qEl.value || "").trim().toLowerCase();
+      if(!q) return true;
+      return (movie.title || "").toLowerCase().includes(q);
+    }
+
     function moviePassesFilters(movie, today){
       if(hiddenSet.has(movie.title)) return false;
       if(onlySoonEl.checked && !leavingSoon(movie, today)) return false;
+      if(!matchesSearch(movie)) return false;
       return true;
+    }
+
+    function nextDiff(movie, today){
+      const nx = getNextShowing(movie, today);
+      if(!nx) return 9999;
+      return daysBetween(today, nx);
+    }
+
+    function sortList(list, today){
+      const arr = list.slice();
+
+      if(state.sort === "az"){
+        arr.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+        return arr;
+      }
+      if(state.sort === "long"){
+        arr.sort((a,b) => (runCount(b) - runCount(a)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
+        return arr;
+      }
+      if(state.sort === "short"){
+        arr.sort((a,b) => (runCount(a) - runCount(b)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
+        return arr;
+      }
+
+      // plan: soonest next showing, then leaving soon, then shorter run
+      arr.sort((a,b) => {
+        const ad = nextDiff(a,today);
+        const bd = nextDiff(b,today);
+        const aSoon = leavingSoon(a,today) ? 0 : 1;
+        const bSoon = leavingSoon(b,today) ? 0 : 1;
+        return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
+      });
+      return arr;
     }
 
     function groupMovies(movies, today){
@@ -666,18 +756,11 @@
         else groups.later.push(m);
       }
 
-      const sorter = (a,b) => {
-        const ad = daysBetween(today, getNextShowing(a,today) || new Date(8640000000000000));
-        const bd = daysBetween(today, getNextShowing(b,today) || new Date(8640000000000000));
-        const aSoon = leavingSoon(a,today) ? 0 : 1;
-        const bSoon = leavingSoon(b,today) ? 0 : 1;
-        return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
-      };
+      groups.now = sortList(groups.now, today);
+      groups.next7 = sortList(groups.next7, today);
+      groups.later = sortList(groups.later, today);
+      groups.one = sortList(groups.one, today);
 
-      groups.now.sort(sorter);
-      groups.next7.sort(sorter);
-      groups.later.sort(sorter);
-      groups.one.sort(sorter);
       return groups;
     }
 
@@ -705,12 +788,33 @@
       `;
     }
 
+    function mutedCardHTML(title){
+      return `
+        <div class="card mutedCard">
+          <div class="muteRow">
+            <div class="titleRow">
+              <h2 class="title">${escapeHtml(title)}</h2>
+            </div>
+            <div class="muteActions">
+              <button class="smallBtn" data-mute="${escapeAttr(title)}">unmute</button>
+              <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function cardHTML(movie, today){
+      const title = movie.title || "Untitled";
+
+      if(mutedSet.has(title)){
+        return mutedCardHTML(title);
+      }
+
       const next = getNextShowing(movie, today);
       const last = getLastShowing(movie);
       if(!next || !last) return "";
 
-      const title = movie.title || "Untitled";
       const nextLabel = formatNextLabel(next, today);
 
       const endsIn = daysBetween(today, last);
@@ -719,8 +823,6 @@
       else if(endsIn === 1) endText = "ends tomorrow";
       else if(endsIn > 1) endText = `ends in ${endsIn} days`;
       else endText = `ended`;
-
-      const isMuted = mutedSet.has(title);
 
       const { beads, monthTags } = buildBeads(movie, today);
 
@@ -736,12 +838,8 @@
         return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
       }).join("");
 
-      // actions
-      const muteText = isMuted ? "unmute" : "mute";
-      const cardClass = isMuted ? "card mutedCard" : "card";
-
       return `
-        <div class="${cardClass}">
+        <div class="card">
           <div class="cardRow">
             ${posterHTML(title)}
             <div class="content">
@@ -761,7 +859,7 @@
                 </div>
 
                 <div class="actions">
-                  <button class="smallBtn" data-mute="${escapeAttr(title)}" title="Collapse this title">${muteText}</button>
+                  <button class="smallBtn" data-mute="${escapeAttr(title)}" title="Collapse this title">mute</button>
                   <button class="smallBtn" data-hide="${escapeAttr(title)}" title="Hide this title">hide</button>
                 </div>
               </div>
@@ -785,7 +883,9 @@
       document.querySelectorAll("button[data-hide]").forEach(btn=>{
         btn.addEventListener("click", ()=>{
           const title = btn.getAttribute("data-hide");
-          hideTitle(title);
+          hiddenSet.add(title);
+          saveSet(HIDDEN_KEY, hiddenSet);
+          render();
         });
       });
       document.querySelectorAll("button[data-mute]").forEach(btn=>{
@@ -796,9 +896,17 @@
       });
     }
 
-    // ---------- data ----------
-    let state = { movies: [], generated_at: null, source: null, days_ahead: 60 };
+    // ---------- sort controls ----------
+    let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
 
+    function setSort(newSort){
+      state.sort = newSort;
+      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
+      render();
+    }
+    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
+
+    // ---------- data ----------
     async function load(){
       const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
       daysEl.value = String(days);
@@ -846,6 +954,7 @@
     document.getElementById("debug").addEventListener("click", debugFetch);
     onlySoonEl.addEventListener("change", render);
     groupedEl.addEventListener("change", render);
+    qEl.addEventListener("input", render);
 
     function renderCards(movies, today){
       const html = movies.map(m => cardHTML(m, today)).filter(Boolean).join("");
@@ -853,13 +962,17 @@
       return `<div class="grid">${html}</div>`;
     }
 
+    function moviePasses(m, today){
+      return moviePassesFilters(m, today);
+    }
+
     function render(){
       const today = new Date();
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
-      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
+      const filtered = state.movies.filter(m => moviePasses(m, today));
       if(filtered.length === 0){
-        out.innerHTML = `<div class="error">Nothing to show. Either everything is hidden, or your filters are too spicy.</div>`;
+        out.innerHTML = `<div class="error">Nothing to show. Either everything is hidden, or your filters/search are too spicy.</div>`;
         return;
       }
 
@@ -909,7 +1022,7 @@
 
         out.innerHTML = blocks.join("") || `<div class="error">Nothing to show with current filters.</div>`;
       } else {
-        out.innerHTML = renderCards(filtered, today);
+        out.innerHTML = renderCards(sortList(filtered, today), today);
       }
 
       attachHandlers();
