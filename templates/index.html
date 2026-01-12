@@ -13,10 +13,13 @@
       --text:#eaeaf2;
       --muted:rgba(234,234,242,.72);
       --muted2:rgba(234,234,242,.55);
+      --accent:#9ad1ff;
+
       --bead:#161625;
       --beadBorder:#2b2b49;
       --beadDim:#0f0f19;
-      --accent:#9ad1ff;
+
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
 
       /* badges */
       --warnBg:#2a0f16;
@@ -27,11 +30,20 @@
       --shortBorder:#4b4420;
       --shortText:#fff1b8;
 
+      --eventBg:#0f1a16;
+      --eventBorder:#1f4b3b;
+      --eventText:#bfffe7;
+
+      --oneBg:#101a2b;
+      --oneBorder:#274a7a;
+      --oneText:#cfe6ff;
+
       /* today bead */
       --todayBg:#1d2a3a;
       --todayBorder:#6bb8ff;
 
-      --shadow: 0 8px 24px rgba(0,0,0,.35);
+      /* section header */
+      --sectionBg: rgba(20,20,33,.7);
     }
 
     *{ box-sizing:border-box; }
@@ -42,16 +54,16 @@
       background:var(--bg);
       color:var(--text);
     }
-    .wrap{ max-width:1100px; margin:0 auto; }
+    .wrap{ max-width:1200px; margin:0 auto; }
     h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
-    .sub{ opacity:.8; margin-bottom:18px; max-width: 75ch; }
+    .sub{ opacity:.8; margin-bottom:18px; max-width: 80ch; }
 
     .controls{
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      margin:16px 0 18px;
+      margin:16px 0 10px;
       padding:14px;
       background:var(--panel2);
       border:1px solid var(--border);
@@ -79,6 +91,7 @@
       cursor:pointer;
       user-select:none;
       font-size:13px;
+      line-height:1;
     }
     .btn:hover{ background:#23233a; }
 
@@ -119,8 +132,34 @@
       grid-template-columns: 1fr;
       gap:12px;
     }
-    @media (min-width: 860px){
+    @media (min-width: 900px){
       .grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .section{
+      margin: 18px 0 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--sectionBg);
+      display:flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: var(--shadow);
+    }
+    .sectionTitle{
+      margin:0;
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      opacity: .92;
+    }
+    .sectionHint{
+      font-size: 12px;
+      color: var(--muted2);
+      white-space: nowrap;
     }
 
     .card{
@@ -138,12 +177,12 @@
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:10px;
+      margin-bottom:8px;
     }
 
     .title{
       font-size:16px;
-      font-weight:650;
+      font-weight:750;
       line-height:1.15;
       margin:0;
     }
@@ -154,7 +193,7 @@
       align-items:center;
       flex-wrap:wrap;
       justify-content:flex-end;
-      max-width: 52%;
+      max-width: 60%;
     }
 
     .badge{
@@ -166,27 +205,56 @@
       border:1px solid var(--beadBorder);
       background:#0f0f19;
       font-size:12px;
-      opacity:.9;
+      opacity:.92;
       white-space:nowrap;
+      font-weight:650;
+      letter-spacing:.15px;
     }
 
-    .badge.warn{
-      background:var(--warnBg);
-      border-color:var(--warnBorder);
-      color:var(--warnText);
-      font-weight:700;
-      letter-spacing:.2px;
-    }
+    .badge.warn{ background:var(--warnBg); border-color:var(--warnBorder); color:var(--warnText); }
+    .badge.short{ background:var(--shortBg); border-color:var(--shortBorder); color:var(--shortText); }
+    .badge.event{ background:var(--eventBg); border-color:var(--eventBorder); color:var(--eventText); }
+    .badge.one{ background:var(--oneBg); border-color:var(--oneBorder); color:var(--oneText); }
 
-    .badge.short{
-      background:var(--shortBg);
-      border-color:var(--shortBorder);
-      color:var(--shortText);
-      font-weight:700;
-      letter-spacing:.2px;
-    }
+    .badge.small{ opacity:.75; font-weight:600; }
 
-    .badge.small{ opacity:.75; }
+    .planRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin: 6px 0 10px;
+      flex-wrap:wrap;
+    }
+    .planLine{
+      font-size: 13px;
+      color: var(--muted);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .planLabel{
+      color: var(--muted2);
+    }
+    .planValue{
+      font-weight: 700;
+      color: var(--text);
+    }
+    .hideBtn{
+      border: 1px solid rgba(43,43,73,.8);
+      background: rgba(15,15,25,.55);
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .hideBtn:hover{
+      border-color: rgba(154,209,255,.5);
+      color: var(--text);
+    }
 
     .timeline{
       display:flex;
@@ -225,7 +293,7 @@
       align-items:center;
       justify-content:center;
       font-size:12px;
-      font-weight:650;
+      font-weight:750;
       letter-spacing:.2px;
       background:var(--bead);
       border:1px solid var(--beadBorder);
@@ -240,6 +308,17 @@
       background: var(--todayBg);
       border-color: var(--todayBorder);
       box-shadow: 0 0 0 2px rgba(107,184,255,.12);
+    }
+    .gapDots{
+      width: 22px;
+      height: 34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(234,234,242,.22);
+      font-weight: 800;
+      letter-spacing: 2px;
+      user-select:none;
     }
 
     .bead:hover{
@@ -267,13 +346,63 @@
       white-space:pre-wrap;
       box-shadow: var(--shadow);
     }
+
+    .hiddenPanel{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(16,16,26,.65);
+      box-shadow: var(--shadow);
+      display:none;
+    }
+    .hiddenPanel.show{ display:block; }
+    .hiddenHeader{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom: 10px;
+    }
+    .hiddenTitle{
+      margin:0;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing:.3px;
+      text-transform: uppercase;
+      opacity:.9;
+    }
+    .hiddenList{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.8);
+      background: rgba(15,15,25,.55);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chip button{
+      border:0;
+      background: transparent;
+      color: var(--accent);
+      cursor:pointer;
+      padding: 0;
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      Each bead is an actual listed date (not a filled-in range). Minimal color unless something is about to disappear.
+      Planner mode. The bead row is the actual listed dates only. Cards tell you the next showing so you can decide like a human instead of a spreadsheet.
     </div>
 
     <div class="controls">
@@ -283,18 +412,32 @@
       <button class="btn primary" id="refresh">Refresh</button>
       <button class="btn" id="debug">Debug fetch</button>
 
-      <span style="flex:1"></span>
-
-      <button class="btn sort active" data-sort="now">Now</button>
-      <button class="btn sort" data-sort="soon">Soon</button>
-      <button class="btn sort" data-sort="long">Long runs</button>
-      <button class="btn sort" data-sort="one">One night</button>
-      <button class="btn sort" data-sort="az">A Z</button>
+      <label class="toggle" title="Group into Now / Next 7 Days / Later / One Night">
+        <input id="grouped" type="checkbox" checked />
+        grouped
+      </label>
 
       <label class="toggle" title="Show only titles ending within 3 days">
         <input id="onlySoon" type="checkbox" />
         only leaving soon
       </label>
+
+      <span style="flex:1"></span>
+
+      <button class="btn sort active" data-sort="plan">Plan</button>
+      <button class="btn sort" data-sort="az">A Z</button>
+      <button class="btn sort" data-sort="long">Long</button>
+      <button class="btn sort" data-sort="short">Short</button>
+
+      <button class="btn" id="toggleHidden">Hidden</button>
+    </div>
+
+    <div id="hiddenPanel" class="hiddenPanel">
+      <div class="hiddenHeader">
+        <h2 class="hiddenTitle">Hidden titles</h2>
+        <button class="btn" id="clearHidden">Unhide all</button>
+      </div>
+      <div id="hiddenList" class="hiddenList"></div>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -306,15 +449,101 @@
     const meta = document.getElementById("meta");
     const daysEl = document.getElementById("days");
     const onlySoonEl = document.getElementById("onlySoon");
+    const groupedEl = document.getElementById("grouped");
+
+    const hiddenPanel = document.getElementById("hiddenPanel");
+    const hiddenListEl = document.getElementById("hiddenList");
+    const toggleHiddenBtn = document.getElementById("toggleHidden");
+    const clearHiddenBtn = document.getElementById("clearHidden");
 
     const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
     let state = {
-      sort: "now",
+      sort: "plan",
       movies: [],
       generated_at: null,
       source: null,
       days_ahead: 60
     };
+
+    // --------- hidden titles (localStorage) ----------
+    const HIDDEN_KEY = "kalispell_hidden_titles_v1";
+
+    function loadHidden(){
+      try{
+        const raw = localStorage.getItem(HIDDEN_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(arr) ? arr : []);
+      }catch{
+        return new Set();
+      }
+    }
+
+    function saveHidden(set){
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    let hiddenSet = loadHidden();
+
+    function hideTitle(title){
+      hiddenSet.add(title);
+      saveHidden(hiddenSet);
+      renderHiddenPanel();
+      render();
+    }
+
+    function unhideTitle(title){
+      hiddenSet.delete(title);
+      saveHidden(hiddenSet);
+      renderHiddenPanel();
+      render();
+    }
+
+    function clearHidden(){
+      hiddenSet = new Set();
+      saveHidden(hiddenSet);
+      renderHiddenPanel();
+      render();
+    }
+
+    function renderHiddenPanel(){
+      const items = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
+      if(items.length === 0){
+        hiddenListEl.innerHTML = `<span class="chip">none</span>`;
+        return;
+      }
+      hiddenListEl.innerHTML = items.map(t => `
+        <span class="chip">
+          ${escapeHtml(t)}
+          <button data-unhide="${escapeAttr(t)}" title="Unhide">unhide</button>
+        </span>
+      `).join("");
+
+      hiddenListEl.querySelectorAll("button[data-unhide]").forEach(btn=>{
+        btn.addEventListener("click", () => unhideTitle(btn.getAttribute("data-unhide")));
+      });
+    }
+
+    toggleHiddenBtn.addEventListener("click", ()=>{
+      hiddenPanel.classList.toggle("show");
+      renderHiddenPanel();
+    });
+
+    clearHiddenBtn.addEventListener("click", clearHidden);
+
+    // --------- helpers ----------
+    function escapeHtml(s) {
+      return (s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+    }
+    function escapeAttr(s){
+      return (s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+    }
 
     function parseISODate(s){
       const [y,m,d] = s.split("-").map(Number);
@@ -333,11 +562,15 @@
       return `${mon} ${d.getFullYear()}`;
     }
 
-    function escapeHtml(s) {
-      return (s || "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;");
+    function formatNextLabel(dt, today){
+      const diff = daysBetween(today, dt);
+      const w = dt.toLocaleString(undefined, { weekday: "short" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const day = dt.getDate();
+      if(diff === 0) return `Today (${w})`;
+      if(diff === 1) return `Tomorrow (${w})`;
+      if(diff > 1 && diff <= 7) return `${w} (${mon} ${day})`;
+      return `${mon} ${day} (${w})`;
     }
 
     function setSort(newSort){
@@ -348,7 +581,9 @@
 
     sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
     onlySoonEl.addEventListener("change", render);
+    groupedEl.addEventListener("change", render);
 
+    // --------- load data ----------
     async function load(){
       const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
       daysEl.value = String(days);
@@ -371,6 +606,7 @@
         state.source = data.source;
         state.days_ahead = data.days_ahead;
 
+        renderHiddenPanel();
         render();
       }catch(e){
         meta.textContent = "";
@@ -395,80 +631,77 @@
     document.getElementById("refresh").addEventListener("click", load);
     document.getElementById("debug").addEventListener("click", debugFetch);
 
+    // --------- planner logic ----------
     function hasDates(movie){
       return Array.isArray(movie.dates) && movie.dates.length > 0;
     }
 
-    function lastListedDate(movie){
-      if(hasDates(movie)){
-        return parseISODate(movie.dates[movie.dates.length - 1]);
+    function sortedDateObjs(movie){
+      const arr = hasDates(movie) ? movie.dates.slice() : [];
+      arr.sort(); // iso strings sort correctly
+      return arr.map(parseISODate);
+    }
+
+    function getNextShowing(movie, today){
+      const dates = sortedDateObjs(movie);
+      for(const d of dates){
+        if(daysBetween(today, d) >= 0) return d;
       }
-      return parseISODate(movie.last_date);
+      return null;
+    }
+
+    function getLastShowing(movie){
+      const dates = sortedDateObjs(movie);
+      return dates.length ? dates[dates.length - 1] : null;
     }
 
     function leavingSoon(movie, today){
-      const last = lastListedDate(movie);
-      const daysLeft = daysBetween(today, last);
-      return daysLeft <= 3;
+      const last = getLastShowing(movie);
+      if(!last) return false;
+      return daysBetween(today, last) <= 3;
     }
 
-    function shortRun(movie){
-      const n = hasDates(movie) ? movie.dates.length : (movie.run_length_days || 0);
-      return n <= 3;
+    function runCount(movie){
+      return hasDates(movie) ? movie.dates.length : (movie.run_length_days || 0);
     }
 
-    function sortMovies(movies){
-      const list = movies.slice();
-
-      if(state.sort === "az"){
-        list.sort((a,b) => (a.title || "").localeCompare(b.title || ""));
-        return list;
-      }
-
-      if(state.sort === "one"){
-        list.sort((a,b) => (a.run_length_days - b.run_length_days) || (a.days_until_start - b.days_until_start) || (a.title||"").localeCompare(b.title||""));
-        return list;
-      }
-
-      if(state.sort === "long"){
-        list.sort((a,b) => (b.run_length_days - a.run_length_days) || (a.days_until_start - b.days_until_start) || (a.title||"").localeCompare(b.title||""));
-        return list;
-      }
-
-      if(state.sort === "soon"){
-        list.sort((a,b) => {
-          const af = a.days_until_start;
-          const bf = b.days_until_start;
-          const aKey = (af < 0) ? 9999 : af;
-          const bKey = (bf < 0) ? 9999 : bf;
-          return (aKey - bKey) || (a.run_length_days - b.run_length_days) || (a.title||"").localeCompare(b.title||"");
-        });
-        return list;
-      }
-
-      // default "now"
-      list.sort((a,b) => {
-        const aNow = a.days_until_start <= 0 ? 0 : 1;
-        const bNow = b.days_until_start <= 0 ? 0 : 1;
-        return (aNow - bNow) ||
-               (a.days_until_start - b.days_until_start) ||
-               (a.run_length_days - b.run_length_days) ||
-               (a.title||"").localeCompare(b.title||"");
-      });
-      return list;
+    function spanDays(movie){
+      const dates = sortedDateObjs(movie);
+      if(dates.length <= 1) return 0;
+      return daysBetween(dates[0], dates[dates.length - 1]);
     }
 
-    function buildBeadsFromDates(movie, today){
-      const dates = hasDates(movie) ? movie.dates : [];
+    function classify(movie){
+      const n = runCount(movie);
+      const span = spanDays(movie);
+
+      if(n === 1) return "one"; // ONE NIGHT
+      if(n <= 3 && span >= 4) return "event"; // sparse dates
+      if(n <= 3 && span <= 3) return "short"; // clustered short run
+      return "normal";
+    }
+
+    function buildBeads(movie, today){
+      const dates = sortedDateObjs(movie);
       const beads = [];
       const monthTags = [];
-      let lastMonthKey = null;
 
-      for(const iso of dates){
-        const dt = parseISODate(iso);
+      let lastMonthKey = null;
+      let prev = null;
+
+      for(const dt of dates){
         const y = dt.getFullYear();
         const m = dt.getMonth();
         const d = dt.getDate();
+
+        // gap indicator if dates are not consecutive
+        if(prev){
+          const gap = daysBetween(prev, dt);
+          if(gap > 1){
+            beads.push({ gap: true });
+          }
+        }
+        prev = dt;
 
         const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
         const isPast = (daysBetween(dt, today) < 0);
@@ -486,36 +719,136 @@
         });
       }
 
-      return { beads, monthTags, totalDays: dates.length };
+      return { beads, monthTags };
     }
 
-    function cardHTML(movie){
-      const today = new Date();
+    function moviePassesFilters(movie, today){
+      if(hiddenSet.has(movie.title)) return false;
+      if(onlySoonEl.checked && !leavingSoon(movie, today)) return false;
+      return true;
+    }
 
+    function sortMoviesForAll(movies, today){
+      const list = movies.slice();
+
+      if(state.sort === "az"){
+        list.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+        return list;
+      }
+
+      if(state.sort === "long"){
+        list.sort((a,b) => (runCount(b) - runCount(a)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
+        return list;
+      }
+
+      if(state.sort === "short"){
+        list.sort((a,b) => (runCount(a) - runCount(b)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
+        return list;
+      }
+
+      // Plan sort: by next showing soonest, then leaving soon, then shorter runs
+      list.sort((a,b) => {
+        const ad = nextDiff(a,today);
+        const bd = nextDiff(b,today);
+        const aSoon = leavingSoon(a,today) ? 0 : 1;
+        const bSoon = leavingSoon(b,today) ? 0 : 1;
+        return (ad - bd) ||
+               (aSoon - bSoon) ||
+               (runCount(a) - runCount(b)) ||
+               (a.title||"").localeCompare(b.title||"");
+      });
+      return list;
+    }
+
+    function nextDiff(movie, today){
+      const nx = getNextShowing(movie, today);
+      if(!nx) return 9999;
+      return daysBetween(today, nx);
+    }
+
+    function groupMovies(movies, today){
+      const groups = {
+        now: [],
+        next7: [],
+        later: [],
+        one: []
+      };
+
+      for(const m of movies){
+        if(!moviePassesFilters(m, today)) continue;
+
+        const next = getNextShowing(m, today);
+        const last = getLastShowing(m);
+
+        if(!next || !last) continue;
+
+        const dNext = daysBetween(today, next);
+
+        const isOne = (runCount(m) === 1);
+        if(isOne){
+          groups.one.push(m);
+          continue;
+        }
+
+        if(dNext <= 0){
+          groups.now.push(m);
+        }else if(dNext <= 7){
+          groups.next7.push(m);
+        }else{
+          groups.later.push(m);
+        }
+      }
+
+      // sort within groups using Plan sort
+      const sorter = (a,b) => {
+        const ad = nextDiff(a,today);
+        const bd = nextDiff(b,today);
+        const aSoon = leavingSoon(a,today) ? 0 : 1;
+        const bSoon = leavingSoon(b,today) ? 0 : 1;
+        return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
+      };
+
+      groups.now.sort(sorter);
+      groups.next7.sort(sorter);
+      groups.later.sort(sorter);
+      groups.one.sort(sorter);
+
+      return groups;
+    }
+
+    function badgeHTML(movie, today){
+      const n = runCount(movie);
+      const kind = classify(movie);
       const soon = leavingSoon(movie, today);
-      const onlySoon = onlySoonEl.checked;
-      if(onlySoon && !soon) return "";
 
-      const startsIn = movie.days_until_start;
+      const parts = [];
 
-      let startText = "";
-      if(startsIn === 0) startText = "starts today";
-      else if(startsIn === 1) startText = "starts tomorrow";
-      else if(startsIn > 1) startText = `starts in ${startsIn} days`;
-      else startText = `already started`;
+      if(soon) parts.push(`<span class="badge warn">LEAVING SOON</span>`);
 
-      const last = lastListedDate(movie);
-      const daysLeft = daysBetween(today, last);
+      if(kind === "one") parts.push(`<span class="badge one">ONE NIGHT</span>`);
+      else if(kind === "event") parts.push(`<span class="badge event">EVENT DATES</span>`);
+      else if(kind === "short") parts.push(`<span class="badge short">SHORT RUN</span>`);
+
+      parts.push(`<span class="badge small">${n} day${n===1?"":"s"}</span>`);
+      return parts.join("");
+    }
+
+    function cardHTML(movie, today){
+      const next = getNextShowing(movie, today);
+      const last = getLastShowing(movie);
+      if(!next || !last) return "";
+
+      const nextLabel = formatNextLabel(next, today);
+      const endsIn = daysBetween(today, last);
 
       let endText = "";
-      if(daysLeft === 0) endText = "ends today";
-      else if(daysLeft === 1) endText = "ends tomorrow";
-      else if(daysLeft > 1) endText = `ends in ${daysLeft} days`;
-      else endText = `ended ${Math.abs(daysLeft)} days ago`;
+      if(endsIn === 0) endText = "ends today";
+      else if(endsIn === 1) endText = "ends tomorrow";
+      else if(endsIn > 1) endText = `ends in ${endsIn} days`;
+      else endText = `ended`;
 
-      const { beads, monthTags, totalDays } = buildBeadsFromDates(movie, today);
+      const { beads, monthTags } = buildBeads(movie, today);
 
-      // Month tags: show up to 2, then +N
       let monthRow = "";
       if(monthTags.length){
         const shown = monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("");
@@ -523,21 +856,28 @@
         monthRow = `<div class="monthRow">${shown}${more}</div>`;
       }
 
-      const beadsHTML = beads.map(b => `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`).join("");
-
-      const badgeSoon = soon ? `<span class="badge warn">LEAVING SOON</span>` : "";
-      const badgeShort = shortRun(movie) ? `<span class="badge short">SHORT RUN</span>` : "";
-      const badgeRun = `<span class="badge small">${totalDays} day${totalDays===1?"":"s"}</span>`;
+      const beadsHTML = beads.map(b => {
+        if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
+        return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
+      }).join("");
 
       return `
         <div class="card">
           <div class="titleRow">
             <h2 class="title">${escapeHtml(movie.title)}</h2>
             <div class="badges">
-              ${badgeSoon}
-              ${badgeShort}
-              ${badgeRun}
+              ${badgeHTML(movie, today)}
             </div>
+          </div>
+
+          <div class="planRow">
+            <div class="planLine">
+              <span class="planLabel">Next showing</span>
+              <span class="planValue">${escapeHtml(nextLabel)}</span>
+              <span class="planLabel">·</span>
+              <span class="planLabel">${escapeHtml(endText)}</span>
+            </div>
+            <button class="hideBtn" data-hide="${escapeAttr(movie.title)}" title="Hide this title">hide</button>
           </div>
 
           <div class="timeline">
@@ -546,28 +886,97 @@
           </div>
 
           <div class="footerRow">
-            <span>${escapeHtml(startText)}</span>
-            <span>${escapeHtml(endText)}</span>
+            <span>first listed: ${escapeHtml(movie.first_date)}</span>
+            <span>last listed: ${escapeHtml(movie.last_date)}</span>
           </div>
         </div>
       `;
     }
 
+    function renderCards(movies, today){
+      const html = movies.map(m => cardHTML(m, today)).filter(Boolean).join("");
+      if(!html) return "";
+      return `<div class="grid">${html}</div>`;
+    }
+
+    function attachHideHandlers(){
+      document.querySelectorAll("button[data-hide]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const title = btn.getAttribute("data-hide");
+          hideTitle(title);
+        });
+      });
+    }
+
     function render(){
-      const movies = sortMovies(state.movies);
+      const today = new Date();
 
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
-      const htmlCards = movies.map(cardHTML).filter(Boolean).join("");
-
-      if(!htmlCards){
-        out.innerHTML = `<div class="error">Nothing to show with current filters. Try turning off “only leaving soon”.</div>`;
+      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
+      if(filtered.length === 0){
+        out.innerHTML = `<div class="error">Nothing to show. Either everything is hidden, or your filters are too spicy.</div>`;
         return;
       }
 
-      out.innerHTML = `<div class="grid">${htmlCards}</div>`;
+      if(groupedEl.checked){
+        const g = groupMovies(state.movies, today);
+
+        const blocks = [];
+
+        if(g.now.length){
+          blocks.push(`
+            <div class="section">
+              <h2 class="sectionTitle">Now playing</h2>
+              <div class="sectionHint">${g.now.length} title${g.now.length===1?"":"s"}</div>
+            </div>
+            ${renderCards(g.now, today)}
+          `);
+        }
+
+        if(g.next7.length){
+          blocks.push(`
+            <div class="section">
+              <h2 class="sectionTitle">Next 7 days</h2>
+              <div class="sectionHint">${g.next7.length} title${g.next7.length===1?"":"s"}</div>
+            </div>
+            ${renderCards(g.next7, today)}
+          `);
+        }
+
+        if(g.later.length){
+          blocks.push(`
+            <div class="section">
+              <h2 class="sectionTitle">Later</h2>
+              <div class="sectionHint">${g.later.length} title${g.later.length===1?"":"s"}</div>
+            </div>
+            ${renderCards(g.later, today)}
+          `);
+        }
+
+        if(g.one.length){
+          blocks.push(`
+            <div class="section">
+              <h2 class="sectionTitle">One night only</h2>
+              <div class="sectionHint">${g.one.length} title${g.one.length===1?"":"s"}</div>
+            </div>
+            ${renderCards(g.one, today)}
+          `);
+        }
+
+        out.innerHTML = blocks.join("") || `<div class="error">Nothing to show with current filters.</div>`;
+        attachHideHandlers();
+        return;
+      }
+
+      // All mode: apply sorting choice
+      const sorted = sortMoviesForAll(filtered, today);
+      out.innerHTML = renderCards(sorted, today);
+      attachHideHandlers();
     }
 
+    // initial
+    renderHiddenPanel();
     load();
   </script>
 </body>
