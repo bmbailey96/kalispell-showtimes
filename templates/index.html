@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalispell Showtimes</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0b0f;
+      color: #eaeaf2;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 10px; font-size: 26px; letter-spacing: 0.2px; }
+    .sub { opacity: 0.8; margin-bottom: 18px; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 16px 0 18px;
+      padding: 14px;
+      background: #141421;
+      border: 1px solid #22223a;
+      border-radius: 10px;
+    }
+    input[type="number"] {
+      width: 90px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #2b2b49;
+      background: #0f0f19;
+      color: #eaeaf2;
+    }
+    button {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #2b2b49;
+      background: #1c1c2e;
+      color: #eaeaf2;
+      cursor: pointer;
+    }
+    button:hover { background: #23233a; }
+    .meta {
+      font-size: 13px;
+      opacity: 0.8;
+      margin: 10px 0 18px;
+    }
+    .card {
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 1px solid #22223a;
+      background: #11111b;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #2b2b49;
+      background: #0f0f19;
+    }
+    .error {
+      padding: 14px;
+      border-radius: 10px;
+      background: #2a0f16;
+      border: 1px solid #5a1b2a;
+      color: #ffd6de;
+      white-space: pre-wrap;
+    }
+    a { color: #9ad1ff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Kalispell Showtimes</h1>
+    <div class="sub">Pulls schedule data from TributeMovies and summarizes the date range each movie is listed for.</div>
+
+    <div class="controls">
+      <label for="days">Days ahead</label>
+      <input id="days" type="number" min="1" max="365" value="60" />
+      <button id="go">Refresh</button>
+      <button id="debug">Debug fetch</button>
+      <span id="status" class="meta"></span>
+    </div>
+
+    <div id="meta" class="meta"></div>
+    <div id="out"></div>
+  </div>
+
+  <script>
+    const out = document.getElementById("out");
+    const meta = document.getElementById("meta");
+    const statusEl = document.getElementById("status");
+    const daysEl = document.getElementById("days");
+
+    function setStatus(t) {
+      statusEl.textContent = t || "";
+    }
+
+    function escapeHtml(s) {
+      return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    function card(m) {
+      const start = m.first_date;
+      const end = m.last_date;
+      const until = m.days_until_start;
+      const run = m.run_length_days;
+
+      let untilText = "";
+      if (until === 0) untilText = "starts today";
+      else if (until === 1) untilText = "starts tomorrow";
+      else if (until > 1) untilText = `starts in ${until} days`;
+      else untilText = `started ${Math.abs(until)} days ago`;
+
+      return `
+        <div class="card">
+          <div class="title">${escapeHtml(m.title)}</div>
+          <div class="row">
+            <span class="pill">${start} → ${end}</span>
+            <span class="pill">${untilText}</span>
+            <span class="pill">${run} listed day${run === 1 ? "" : "s"}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function load() {
+      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
+      daysEl.value = String(days);
+
+      setStatus("Loading…");
+      out.innerHTML = "";
+      meta.textContent = "";
+
+      try {
+        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          setStatus("");
+          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\n\nDebug:\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
+          return;
+        }
+
+        setStatus("");
+        meta.textContent = `Generated: ${data.generated_at}   Source: ${data.source}   Days ahead: ${data.days_ahead}`;
+
+        if (!data.movies || data.movies.length === 0) {
+          out.innerHTML = `<div class="error">No movies found. This usually means the page layout changed or the fetch got blocked.</div>`;
+          return;
+        }
+
+        out.innerHTML = data.movies.map(card).join("");
+      } catch (e) {
+        setStatus("");
+        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+      }
+    }
+
+    async function debugFetch() {
+      setStatus("Running debug…");
+      out.innerHTML = "";
+      meta.textContent = "";
+
+      try {
+        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
+        const data = await res.json();
+        setStatus("");
+
+        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+      } catch (e) {
+        setStatus("");
+        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
+      }
+    }
+
+    document.getElementById("go").addEventListener("click", load);
+    document.getElementById("debug").addEventListener("click", debugFetch);
+
+    load();
+  </script>
+</body>
+</html>
