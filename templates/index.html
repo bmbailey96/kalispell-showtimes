@@ -54,9 +54,9 @@
       background:var(--bg);
       color:var(--text);
     }
-    .wrap{ max-width:1200px; margin:0 auto; }
+    .wrap{ max-width:1240px; margin:0 auto; }
     h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
-    .sub{ opacity:.8; margin-bottom:18px; max-width: 80ch; }
+    .sub{ opacity:.8; margin-bottom:18px; max-width: 90ch; }
 
     .controls{
       display:flex;
@@ -98,12 +98,6 @@
     .btn.primary{
       border-color: rgba(154,209,255,.6);
       background: rgba(154,209,255,.10);
-    }
-
-    .btn.sort{ background:#161625; }
-    .btn.sort.active{
-      border-color: rgba(154,209,255,.7);
-      background: rgba(154,209,255,.14);
     }
 
     .toggle{
@@ -151,7 +145,7 @@
     .sectionTitle{
       margin:0;
       font-size: 14px;
-      font-weight: 750;
+      font-weight: 800;
       letter-spacing: .4px;
       text-transform: uppercase;
       opacity: .92;
@@ -172,6 +166,52 @@
       overflow:hidden;
     }
 
+    .cardRow{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .posterWrap{
+      width: 62px;
+      min-width: 62px;
+      height: 92px;
+      border-radius: 10px;
+      overflow:hidden;
+      border: 1px solid rgba(43,43,73,.7);
+      background: rgba(15,15,25,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .poster{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    .poster.loaded{ opacity: 1; }
+    .posterPh{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(234,234,242,.25);
+      font-weight: 900;
+      letter-spacing: .6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      user-select:none;
+    }
+
+    .content{
+      flex:1;
+      min-width: 0;
+    }
+
     .titleRow{
       display:flex;
       align-items:flex-start;
@@ -182,7 +222,7 @@
 
     .title{
       font-size:16px;
-      font-weight:750;
+      font-weight:800;
       line-height:1.15;
       margin:0;
     }
@@ -193,7 +233,7 @@
       align-items:center;
       flex-wrap:wrap;
       justify-content:flex-end;
-      max-width: 60%;
+      max-width: 62%;
     }
 
     .badge{
@@ -215,7 +255,6 @@
     .badge.short{ background:var(--shortBg); border-color:var(--shortBorder); color:var(--shortText); }
     .badge.event{ background:var(--eventBg); border-color:var(--eventBorder); color:var(--eventText); }
     .badge.one{ background:var(--oneBg); border-color:var(--oneBorder); color:var(--oneText); }
-
     .badge.small{ opacity:.75; font-weight:600; }
 
     .planRow{
@@ -234,14 +273,15 @@
       align-items:center;
       flex-wrap:wrap;
     }
-    .planLabel{
-      color: var(--muted2);
+    .planLabel{ color: var(--muted2); }
+    .planValue{ font-weight: 800; color: var(--text); }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
-    .planValue{
-      font-weight: 700;
-      color: var(--text);
-    }
-    .hideBtn{
+    .smallBtn{
       border: 1px solid rgba(43,43,73,.8);
       background: rgba(15,15,25,.55);
       color: var(--muted);
@@ -250,8 +290,9 @@
       font-size: 12px;
       cursor:pointer;
       user-select:none;
+      line-height: 1;
     }
-    .hideBtn:hover{
+    .smallBtn:hover{
       border-color: rgba(154,209,255,.5);
       color: var(--text);
     }
@@ -293,17 +334,13 @@
       align-items:center;
       justify-content:center;
       font-size:12px;
-      font-weight:750;
+      font-weight:800;
       letter-spacing:.2px;
       background:var(--bead);
       border:1px solid var(--beadBorder);
       color: var(--text);
-      position:relative;
     }
-    .bead.dim{
-      opacity:.35;
-      background: rgba(15,15,25,.6);
-    }
+    .bead.dim{ opacity:.35; background: rgba(15,15,25,.6); }
     .bead.today{
       background: var(--todayBg);
       border-color: var(--todayBorder);
@@ -316,15 +353,9 @@
       align-items:center;
       justify-content:center;
       color: rgba(234,234,242,.22);
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: 2px;
       user-select:none;
-    }
-
-    .bead:hover{
-      border-color: rgba(154,209,255,.65);
-      transform: translateY(-1px);
-      transition: transform .08s ease;
     }
 
     .footerRow{
@@ -337,6 +368,17 @@
       flex-wrap:wrap;
     }
 
+    .mutedCard{
+      padding: 12px 14px;
+    }
+    .mutedCard .timeline,
+    .mutedCard .footerRow{
+      display:none;
+    }
+    .mutedCard .planRow{
+      margin: 6px 0 2px;
+    }
+
     .error{
       padding:14px;
       border-radius:12px;
@@ -346,63 +388,13 @@
       white-space:pre-wrap;
       box-shadow: var(--shadow);
     }
-
-    .hiddenPanel{
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(16,16,26,.65);
-      box-shadow: var(--shadow);
-      display:none;
-    }
-    .hiddenPanel.show{ display:block; }
-    .hiddenHeader{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:center;
-      margin-bottom: 10px;
-    }
-    .hiddenTitle{
-      margin:0;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing:.3px;
-      text-transform: uppercase;
-      opacity:.9;
-    }
-    .hiddenList{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(43,43,73,.8);
-      background: rgba(15,15,25,.55);
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .chip button{
-      border:0;
-      background: transparent;
-      color: var(--accent);
-      cursor:pointer;
-      padding: 0;
-      font-weight: 800;
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      Planner mode. The bead row is the actual listed dates only. Cards tell you the next showing so you can decide like a human instead of a spreadsheet.
+      Posters from TMDB. Mute collapses a title into a slim “reminder row” instead of deleting it.
     </div>
 
     <div class="controls">
@@ -421,23 +413,6 @@
         <input id="onlySoon" type="checkbox" />
         only leaving soon
       </label>
-
-      <span style="flex:1"></span>
-
-      <button class="btn sort active" data-sort="plan">Plan</button>
-      <button class="btn sort" data-sort="az">A Z</button>
-      <button class="btn sort" data-sort="long">Long</button>
-      <button class="btn sort" data-sort="short">Short</button>
-
-      <button class="btn" id="toggleHidden">Hidden</button>
-    </div>
-
-    <div id="hiddenPanel" class="hiddenPanel">
-      <div class="hiddenHeader">
-        <h2 class="hiddenTitle">Hidden titles</h2>
-        <button class="btn" id="clearHidden">Unhide all</button>
-      </div>
-      <div id="hiddenList" class="hiddenList"></div>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -451,86 +426,39 @@
     const onlySoonEl = document.getElementById("onlySoon");
     const groupedEl = document.getElementById("grouped");
 
-    const hiddenPanel = document.getElementById("hiddenPanel");
-    const hiddenListEl = document.getElementById("hiddenList");
-    const toggleHiddenBtn = document.getElementById("toggleHidden");
-    const clearHiddenBtn = document.getElementById("clearHidden");
+    // ---------- persistence ----------
+    const HIDDEN_KEY = "kalispell_hidden_titles_v2";
+    const MUTED_KEY  = "kalispell_muted_titles_v2";
 
-    const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
-    let state = {
-      sort: "plan",
-      movies: [],
-      generated_at: null,
-      source: null,
-      days_ahead: 60
-    };
-
-    // --------- hidden titles (localStorage) ----------
-    const HIDDEN_KEY = "kalispell_hidden_titles_v1";
-
-    function loadHidden(){
+    function loadSet(key){
       try{
-        const raw = localStorage.getItem(HIDDEN_KEY);
+        const raw = localStorage.getItem(key);
         const arr = raw ? JSON.parse(raw) : [];
         return new Set(Array.isArray(arr) ? arr : []);
       }catch{
         return new Set();
       }
     }
-
-    function saveHidden(set){
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify(Array.from(set)));
+    function saveSet(key, set){
+      localStorage.setItem(key, JSON.stringify(Array.from(set)));
     }
 
-    let hiddenSet = loadHidden();
+    let hiddenSet = loadSet(HIDDEN_KEY);
+    let mutedSet  = loadSet(MUTED_KEY);
 
     function hideTitle(title){
       hiddenSet.add(title);
-      saveHidden(hiddenSet);
-      renderHiddenPanel();
+      saveSet(HIDDEN_KEY, hiddenSet);
+      render();
+    }
+    function toggleMute(title){
+      if(mutedSet.has(title)) mutedSet.delete(title);
+      else mutedSet.add(title);
+      saveSet(MUTED_KEY, mutedSet);
       render();
     }
 
-    function unhideTitle(title){
-      hiddenSet.delete(title);
-      saveHidden(hiddenSet);
-      renderHiddenPanel();
-      render();
-    }
-
-    function clearHidden(){
-      hiddenSet = new Set();
-      saveHidden(hiddenSet);
-      renderHiddenPanel();
-      render();
-    }
-
-    function renderHiddenPanel(){
-      const items = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
-      if(items.length === 0){
-        hiddenListEl.innerHTML = `<span class="chip">none</span>`;
-        return;
-      }
-      hiddenListEl.innerHTML = items.map(t => `
-        <span class="chip">
-          ${escapeHtml(t)}
-          <button data-unhide="${escapeAttr(t)}" title="Unhide">unhide</button>
-        </span>
-      `).join("");
-
-      hiddenListEl.querySelectorAll("button[data-unhide]").forEach(btn=>{
-        btn.addEventListener("click", () => unhideTitle(btn.getAttribute("data-unhide")));
-      });
-    }
-
-    toggleHiddenBtn.addEventListener("click", ()=>{
-      hiddenPanel.classList.toggle("show");
-      renderHiddenPanel();
-    });
-
-    clearHiddenBtn.addEventListener("click", clearHidden);
-
-    // --------- helpers ----------
+    // ---------- helpers ----------
     function escapeHtml(s) {
       return (s || "")
         .replaceAll("&","&amp;")
@@ -573,72 +501,66 @@
       return `${mon} ${day} (${w})`;
     }
 
-    function setSort(newSort){
-      state.sort = newSort;
-      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
-      render();
-    }
-
-    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
-    onlySoonEl.addEventListener("change", render);
-    groupedEl.addEventListener("change", render);
-
-    // --------- load data ----------
-    async function load(){
-      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
-      daysEl.value = String(days);
-
-      out.innerHTML = "";
-      meta.textContent = "Loading…";
+    // ---------- poster fetching ----------
+    const posterCache = new Map(); // title -> poster_url|null
+    async function fetchPoster(title){
+      if(posterCache.has(title)) return posterCache.get(title);
 
       try{
-        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
+        const res = await fetch(`/api/poster?title=${encodeURIComponent(title)}`, { cache: "no-store" });
         const data = await res.json();
-
-        if(!res.ok || data.error){
-          meta.textContent = "";
-          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\\n\\nDebug:\\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
-          return;
-        }
-
-        state.movies = data.movies || [];
-        state.generated_at = data.generated_at;
-        state.source = data.source;
-        state.days_ahead = data.days_ahead;
-
-        renderHiddenPanel();
-        render();
-      }catch(e){
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+        const url = (data && data.ok) ? data.poster_url : null;
+        posterCache.set(title, url);
+        return url;
+      }catch{
+        posterCache.set(title, null);
+        return null;
       }
     }
 
-    async function debugFetch(){
-      out.innerHTML = "";
-      meta.textContent = "Running debug…";
-      try{
-        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
-        const data = await res.json();
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
-      }catch(e){
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
-      }
+    async function hydratePosters(){
+      const imgs = Array.from(document.querySelectorAll("img.poster[data-title]"));
+      const queue = imgs.slice();
+      const concurrency = 4;
+      let active = 0;
+
+      return new Promise((resolve)=>{
+        const tick = async () => {
+          while(active < concurrency && queue.length){
+            const img = queue.shift();
+            active++;
+
+            const title = img.getAttribute("data-title");
+            const ph = img.previousElementSibling; // .posterPh
+
+            fetchPoster(title).then((url)=>{
+              if(url){
+                img.src = url;
+                img.onload = () => img.classList.add("loaded");
+                img.onerror = () => {};
+                if(ph) ph.style.display = "none";
+              }else{
+                // keep placeholder
+              }
+            }).finally(()=>{
+              active--;
+              if(queue.length === 0 && active === 0) resolve();
+              else tick();
+            });
+          }
+        };
+        tick();
+      });
     }
 
-    document.getElementById("refresh").addEventListener("click", load);
-    document.getElementById("debug").addEventListener("click", debugFetch);
-
-    // --------- planner logic ----------
+    // ---------- planner logic ----------
     function hasDates(movie){
       return Array.isArray(movie.dates) && movie.dates.length > 0;
     }
 
     function sortedDateObjs(movie){
       const arr = hasDates(movie) ? movie.dates.slice() : [];
-      arr.sort(); // iso strings sort correctly
+      arr.sort();
       return arr.map(parseISODate);
     }
 
@@ -675,9 +597,9 @@
       const n = runCount(movie);
       const span = spanDays(movie);
 
-      if(n === 1) return "one"; // ONE NIGHT
-      if(n <= 3 && span >= 4) return "event"; // sparse dates
-      if(n <= 3 && span <= 3) return "short"; // clustered short run
+      if(n === 1) return "one";
+      if(n <= 3 && span >= 4) return "event";
+      if(n <= 3 && span <= 3) return "short";
       return "normal";
     }
 
@@ -690,18 +612,15 @@
       let prev = null;
 
       for(const dt of dates){
+        if(prev){
+          const gap = daysBetween(prev, dt);
+          if(gap > 1) beads.push({ gap: true });
+        }
+        prev = dt;
+
         const y = dt.getFullYear();
         const m = dt.getMonth();
         const d = dt.getDate();
-
-        // gap indicator if dates are not consecutive
-        if(prev){
-          const gap = daysBetween(prev, dt);
-          if(gap > 1){
-            beads.push({ gap: true });
-          }
-        }
-        prev = dt;
 
         const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
         const isPast = (daysBetween(dt, today) < 0);
@@ -728,81 +647,28 @@
       return true;
     }
 
-    function sortMoviesForAll(movies, today){
-      const list = movies.slice();
-
-      if(state.sort === "az"){
-        list.sort((a,b) => (a.title||"").localeCompare(b.title||""));
-        return list;
-      }
-
-      if(state.sort === "long"){
-        list.sort((a,b) => (runCount(b) - runCount(a)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
-        return list;
-      }
-
-      if(state.sort === "short"){
-        list.sort((a,b) => (runCount(a) - runCount(b)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
-        return list;
-      }
-
-      // Plan sort: by next showing soonest, then leaving soon, then shorter runs
-      list.sort((a,b) => {
-        const ad = nextDiff(a,today);
-        const bd = nextDiff(b,today);
-        const aSoon = leavingSoon(a,today) ? 0 : 1;
-        const bSoon = leavingSoon(b,today) ? 0 : 1;
-        return (ad - bd) ||
-               (aSoon - bSoon) ||
-               (runCount(a) - runCount(b)) ||
-               (a.title||"").localeCompare(b.title||"");
-      });
-      return list;
-    }
-
-    function nextDiff(movie, today){
-      const nx = getNextShowing(movie, today);
-      if(!nx) return 9999;
-      return daysBetween(today, nx);
-    }
-
     function groupMovies(movies, today){
-      const groups = {
-        now: [],
-        next7: [],
-        later: [],
-        one: []
-      };
+      const groups = { now: [], next7: [], later: [], one: [] };
 
       for(const m of movies){
         if(!moviePassesFilters(m, today)) continue;
 
         const next = getNextShowing(m, today);
         const last = getLastShowing(m);
-
         if(!next || !last) continue;
 
         const dNext = daysBetween(today, next);
-
         const isOne = (runCount(m) === 1);
-        if(isOne){
-          groups.one.push(m);
-          continue;
-        }
 
-        if(dNext <= 0){
-          groups.now.push(m);
-        }else if(dNext <= 7){
-          groups.next7.push(m);
-        }else{
-          groups.later.push(m);
-        }
+        if(isOne) groups.one.push(m);
+        else if(dNext <= 0) groups.now.push(m);
+        else if(dNext <= 7) groups.next7.push(m);
+        else groups.later.push(m);
       }
 
-      // sort within groups using Plan sort
       const sorter = (a,b) => {
-        const ad = nextDiff(a,today);
-        const bd = nextDiff(b,today);
+        const ad = daysBetween(today, getNextShowing(a,today) || new Date(8640000000000000));
+        const bd = daysBetween(today, getNextShowing(b,today) || new Date(8640000000000000));
         const aSoon = leavingSoon(a,today) ? 0 : 1;
         const bSoon = leavingSoon(b,today) ? 0 : 1;
         return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
@@ -812,7 +678,6 @@
       groups.next7.sort(sorter);
       groups.later.sort(sorter);
       groups.one.sort(sorter);
-
       return groups;
     }
 
@@ -822,15 +687,22 @@
       const soon = leavingSoon(movie, today);
 
       const parts = [];
-
       if(soon) parts.push(`<span class="badge warn">LEAVING SOON</span>`);
-
       if(kind === "one") parts.push(`<span class="badge one">ONE NIGHT</span>`);
       else if(kind === "event") parts.push(`<span class="badge event">EVENT DATES</span>`);
       else if(kind === "short") parts.push(`<span class="badge short">SHORT RUN</span>`);
-
       parts.push(`<span class="badge small">${n} day${n===1?"":"s"}</span>`);
       return parts.join("");
+    }
+
+    function posterHTML(title){
+      const safe = escapeAttr(title);
+      return `
+        <div class="posterWrap">
+          <div class="posterPh">poster</div>
+          <img class="poster" data-title="${safe}" alt="Poster for ${safe}" />
+        </div>
+      `;
     }
 
     function cardHTML(movie, today){
@@ -838,14 +710,17 @@
       const last = getLastShowing(movie);
       if(!next || !last) return "";
 
+      const title = movie.title || "Untitled";
       const nextLabel = formatNextLabel(next, today);
-      const endsIn = daysBetween(today, last);
 
+      const endsIn = daysBetween(today, last);
       let endText = "";
       if(endsIn === 0) endText = "ends today";
       else if(endsIn === 1) endText = "ends tomorrow";
       else if(endsIn > 1) endText = `ends in ${endsIn} days`;
       else endText = `ended`;
+
+      const isMuted = mutedSet.has(title);
 
       const { beads, monthTags } = buildBeads(movie, today);
 
@@ -861,37 +736,116 @@
         return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
       }).join("");
 
+      // actions
+      const muteText = isMuted ? "unmute" : "mute";
+      const cardClass = isMuted ? "card mutedCard" : "card";
+
       return `
-        <div class="card">
-          <div class="titleRow">
-            <h2 class="title">${escapeHtml(movie.title)}</h2>
-            <div class="badges">
-              ${badgeHTML(movie, today)}
+        <div class="${cardClass}">
+          <div class="cardRow">
+            ${posterHTML(title)}
+            <div class="content">
+              <div class="titleRow">
+                <h2 class="title">${escapeHtml(title)}</h2>
+                <div class="badges">
+                  ${badgeHTML(movie, today)}
+                </div>
+              </div>
+
+              <div class="planRow">
+                <div class="planLine">
+                  <span class="planLabel">Next showing</span>
+                  <span class="planValue">${escapeHtml(nextLabel)}</span>
+                  <span class="planLabel">·</span>
+                  <span class="planLabel">${escapeHtml(endText)}</span>
+                </div>
+
+                <div class="actions">
+                  <button class="smallBtn" data-mute="${escapeAttr(title)}" title="Collapse this title">${muteText}</button>
+                  <button class="smallBtn" data-hide="${escapeAttr(title)}" title="Hide this title">hide</button>
+                </div>
+              </div>
+
+              <div class="timeline">
+                ${monthRow}
+                <div class="beads">${beadsHTML}</div>
+              </div>
+
+              <div class="footerRow">
+                <span>first listed: ${escapeHtml(movie.first_date)}</span>
+                <span>last listed: ${escapeHtml(movie.last_date)}</span>
+              </div>
             </div>
-          </div>
-
-          <div class="planRow">
-            <div class="planLine">
-              <span class="planLabel">Next showing</span>
-              <span class="planValue">${escapeHtml(nextLabel)}</span>
-              <span class="planLabel">·</span>
-              <span class="planLabel">${escapeHtml(endText)}</span>
-            </div>
-            <button class="hideBtn" data-hide="${escapeAttr(movie.title)}" title="Hide this title">hide</button>
-          </div>
-
-          <div class="timeline">
-            ${monthRow}
-            <div class="beads">${beadsHTML}</div>
-          </div>
-
-          <div class="footerRow">
-            <span>first listed: ${escapeHtml(movie.first_date)}</span>
-            <span>last listed: ${escapeHtml(movie.last_date)}</span>
           </div>
         </div>
       `;
     }
+
+    function attachHandlers(){
+      document.querySelectorAll("button[data-hide]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const title = btn.getAttribute("data-hide");
+          hideTitle(title);
+        });
+      });
+      document.querySelectorAll("button[data-mute]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const title = btn.getAttribute("data-mute");
+          toggleMute(title);
+        });
+      });
+    }
+
+    // ---------- data ----------
+    let state = { movies: [], generated_at: null, source: null, days_ahead: 60 };
+
+    async function load(){
+      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
+      daysEl.value = String(days);
+
+      out.innerHTML = "";
+      meta.textContent = "Loading…";
+
+      try{
+        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
+        const data = await res.json();
+
+        if(!res.ok || data.error){
+          meta.textContent = "";
+          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\\n\\nDebug:\\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
+          return;
+        }
+
+        state.movies = data.movies || [];
+        state.generated_at = data.generated_at;
+        state.source = data.source;
+        state.days_ahead = data.days_ahead;
+
+        render();
+      }catch(e){
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+      }
+    }
+
+    async function debugFetch(){
+      out.innerHTML = "";
+      meta.textContent = "Running debug…";
+      try{
+        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
+        const data = await res.json();
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+      }catch(e){
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", load);
+    document.getElementById("debug").addEventListener("click", debugFetch);
+    onlySoonEl.addEventListener("change", render);
+    groupedEl.addEventListener("change", render);
 
     function renderCards(movies, today){
       const html = movies.map(m => cardHTML(m, today)).filter(Boolean).join("");
@@ -899,18 +853,8 @@
       return `<div class="grid">${html}</div>`;
     }
 
-    function attachHideHandlers(){
-      document.querySelectorAll("button[data-hide]").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-          const title = btn.getAttribute("data-hide");
-          hideTitle(title);
-        });
-      });
-    }
-
     function render(){
       const today = new Date();
-
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
       const filtered = state.movies.filter(m => moviePassesFilters(m, today));
@@ -921,7 +865,6 @@
 
       if(groupedEl.checked){
         const g = groupMovies(state.movies, today);
-
         const blocks = [];
 
         if(g.now.length){
@@ -965,18 +908,15 @@
         }
 
         out.innerHTML = blocks.join("") || `<div class="error">Nothing to show with current filters.</div>`;
-        attachHideHandlers();
-        return;
+      } else {
+        out.innerHTML = renderCards(filtered, today);
       }
 
-      // All mode: apply sorting choice
-      const sorted = sortMoviesForAll(filtered, today);
-      out.innerHTML = renderCards(sorted, today);
-      attachHideHandlers();
+      attachHandlers();
+      hydratePosters();
     }
 
-    // initial
-    renderHiddenPanel();
+    // init
     load();
   </script>
 </body>
