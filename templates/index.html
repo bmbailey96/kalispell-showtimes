@@ -2,1711 +2,1739 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Kalispell Showtimes</title>
   <style>
     :root{
-      --bg:#0b0b0f;
-      --panel:#10101a;
-      --panel2:#141421;
-      --border:#23233a;
+      --bg:#07070b;
+      --panel:#0f0f18;
+      --panel2:#121222;
+      --border:#22223a;
+      --border2:#2b2b49;
       --text:#eaeaf2;
-      --muted:rgba(234,234,242,.72);
-      --muted2:rgba(234,234,242,.55);
-      --accent:#9ad1ff;
+      --muted:#a7a7c2;
+      --muted2:#8a8aa6;
+      --accent:#7ec7ff;
+      --good:#51d88a;
+      --warn:#ffcc66;
+      --bad:#ff6b7a;
 
-      --bead:#161625;
-      --beadBorder:#2b2b49;
-      --beadDim:#0f0f19;
-
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-
-      --warnBg:#2a0f16;
-      --warnBorder:#5a1b2a;
-      --warnText:#ffd6de;
+      --pillbg:#0c0c16;
+      --shadow: 0 10px 30px rgba(0,0,0,.55);
+      --radius:14px;
     }
 
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      padding:18px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background:var(--bg);
+      background: radial-gradient(1200px 600px at 30% 10%, rgba(110,90,255,.16), transparent 55%),
+                  radial-gradient(900px 500px at 70% 30%, rgba(60,180,255,.12), transparent 60%),
+                  var(--bg);
       color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    .wrap{ width:100%; max-width:none; margin:0; }
 
-    h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
-    .sub{ opacity:.8; margin-bottom:14px; max-width: 110ch; }
+    /* Full width layout */
+    .wrap{
+      width: min(1400px, calc(100vw - 36px));
+      margin: 0 auto;
+      padding: 18px 0 44px;
+    }
+    @media (min-width: 1500px){
+      .wrap{ width: calc(100vw - 48px); }
+    }
+    @media (max-width: 820px){
+      .wrap{ width: calc(100vw - 22px); padding-top: 10px; }
+    }
 
-    /* --- Top layout: Views separate from Filters --- */
-    .topRow{
+    header{
       display:flex;
-      gap:12px;
-      align-items:stretch;
-      flex-wrap:wrap;
-      margin: 12px 0 10px;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom: 10px;
+    }
+    h1{
+      margin:0;
+      font-size: 28px;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      opacity:.9;
+      max-width: 900px;
     }
 
+    /* Top bar */
     .bar{
-      background:var(--panel2);
-      border:1px solid var(--border);
-      border-radius:14px;
-      box-shadow: var(--shadow);
-      padding:12px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(to bottom, rgba(7,7,11,.92), rgba(7,7,11,.70));
+      backdrop-filter: blur(10px);
+      padding: 10px 0 12px;
+      border-bottom: 1px solid rgba(34,34,58,.45);
+      margin-bottom: 14px;
+    }
+    .controls{
       display:flex;
+      flex-wrap:wrap;
       gap:10px;
       align-items:center;
+      padding: 12px;
+      background: rgba(15,15,24,.72);
+      border: 1px solid rgba(34,34,58,.75);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .group{
+      display:flex;
+      gap:8px;
+      align-items:center;
       flex-wrap:wrap;
-      min-height: 54px;
     }
 
-    .bar.views{ flex: 0 0 auto; }
-    .bar.controls{
-      flex: 1 1 auto;
-      min-width: 320px;
-      justify-content:flex-start;
+    .seg{
+      display:inline-flex;
+      gap:6px;
+      background: rgba(12,12,22,.85);
+      border: 1px solid rgba(43,43,73,.9);
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+    }
+    .seg button{
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      opacity:.9;
+    }
+    .seg button.active{
+      background: rgba(126,199,255,.14);
+      border-color: rgba(126,199,255,.22);
+      color: #eaf6ff;
+      opacity:1;
     }
 
-    label{ opacity:.85; font-size:13px; }
-    input[type="number"]{
-      width:92px;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid var(--beadBorder);
-      background:var(--beadDim);
-      color:var(--text);
+    label{
+      font-size: 13px;
+      color: var(--muted);
+      opacity: .95;
+    }
+
+    input[type="number"], input[type="text"]{
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(43,43,73,.95);
+      background: rgba(12,12,22,.85);
+      color: var(--text);
       outline:none;
     }
-
-    .search{
-      width: 240px;
-      max-width: 45vw;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid var(--beadBorder);
-      background:var(--beadDim);
-      color:var(--text);
-      outline:none;
-    }
+    input[type="number"]{ width: 76px; }
+    input[type="text"]{ width: min(320px, 60vw); }
 
     .btn{
-      padding:9px 12px;
-      border-radius:10px;
-      border:1px solid var(--beadBorder);
-      background:#1c1c2e;
-      color:var(--text);
-      cursor:pointer;
-      user-select:none;
-      font-size:13px;
-      line-height:1;
-      white-space:nowrap;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(43,43,73,.95);
+      background: rgba(20,20,36,.85);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
     }
-    .btn:hover{ background:#23233a; }
-    .btn.primary{
-      border-color: rgba(154,209,255,.6);
-      background: rgba(154,209,255,.10);
-    }
-    .btn.pill{ background:#161625; }
-    .btn.pill.active{
-      border-color: rgba(154,209,255,.7);
-      background: rgba(154,209,255,.14);
-    }
+    .btn:hover{ background: rgba(28,28,50,.92); }
 
-    .toggle{
-      display:flex;
-      gap:8px;
+    .chk{
+      display:inline-flex;
       align-items:center;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid var(--beadBorder);
-      background:#161625;
-      cursor:pointer;
-      font-size:13px;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.9);
+      background: rgba(12,12,22,.6);
+      font-size: 13px;
+      color: var(--muted);
       user-select:none;
-      white-space:nowrap;
     }
-    .toggle input{ accent-color: var(--accent); }
-
-    .spacer{ flex:1; }
+    .chk input{ accent-color: var(--accent); }
 
     .meta{
-      font-size:13px;
-      opacity:.75;
-      margin:10px 0 12px;
-      white-space:pre-wrap;
-    }
-
-    .error{
-      padding:14px;
-      border-radius:12px;
-      background:var(--warnBg);
-      border:1px solid var(--warnBorder);
-      color:var(--warnText);
-      white-space:pre-wrap;
-      box-shadow: var(--shadow);
-    }
-
-    /* ---------- Manager drawer (Hidden / Muted) ---------- */
-    .mgr{
-      border: 1px solid rgba(35,35,58,.7);
-      background: rgba(16,16,26,.75);
-      border-radius: 14px;
-      padding: 10px 12px;
-      box-shadow: var(--shadow);
-      margin: 10px 0 14px;
-      display:none;
-    }
-    .mgr.open{ display:block; }
-    .mgrHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom: 8px;
-    }
-    .mgrTitle{
-      font-weight: 900;
-      font-size: 13px;
-      letter-spacing: .3px;
-      text-transform: uppercase;
-      opacity:.9;
-      margin:0;
-    }
-    .mgrGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 900px){
-      .mgrGrid{ grid-template-columns: 1fr; }
-    }
-    .mgrBox{
-      border: 1px solid rgba(35,35,58,.65);
-      border-radius: 12px;
-      padding: 10px;
-      background: rgba(15,15,25,.55);
-    }
-    .mgrBox h3{
-      margin: 0 0 8px;
+      margin-top: 10px;
       font-size: 12px;
-      letter-spacing: .2px;
-      opacity:.8;
-      text-transform: uppercase;
-    }
-    .mgrList{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      max-height: 220px;
-      overflow:auto;
-      padding-right: 4px;
-    }
-    .mgrRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      padding: 7px 8px;
-      border-radius: 10px;
-      border: 1px solid rgba(35,35,58,.55);
-      background: rgba(10,10,16,.35);
-    }
-    .mgrName{
-      min-width:0;
-      flex:1;
-      font-weight: 800;
-      font-size: 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity:.9;
-    }
-    .mgrBtns{ display:flex; gap:6px; }
-    .mini{
-      width: 30px;
-      height: 28px;
-      border-radius: 10px;
-      border: 1px solid rgba(43,43,73,.75);
-      background: rgba(0,0,0,.18);
-      color: rgba(234,234,242,.75);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      user-select:none;
-      font-weight: 900;
-      line-height:1;
-    }
-    .mini:hover{
-      color: var(--text);
-      border-color: rgba(154,209,255,.55);
-      background: rgba(154,209,255,.10);
-    }
-    .mini.danger:hover{
-      border-color: rgba(255,120,150,.55);
-      background: rgba(255,120,150,.10);
-    }
-    .mgrFoot{
+      color: var(--muted2);
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      margin-top: 10px;
+      align-items:center;
     }
 
-    /* ---------- LIST VIEW cards ---------- */
+    /* Sections + cards */
+    h2{
+      margin: 18px 0 10px;
+      font-size: 15px;
+      letter-spacing:.2px;
+      color: #dfe6ff;
+      opacity:.95;
+    }
+
     .grid{
       display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
     }
-    @media (min-width: 980px){
-      .grid{ grid-template-columns: 1fr 1fr; }
+    @media (max-width: 1050px){
+      .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (min-width: 1400px){
-      .grid{ grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; gap: 12px; }
     }
 
     .card{
-      padding:12px 12px 10px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:var(--panel);
-      box-shadow: var(--shadow);
       position:relative;
+      border-radius: var(--radius);
+      border: 1px solid rgba(34,34,58,.85);
+      background: linear-gradient(180deg, rgba(18,18,34,.9), rgba(10,10,18,.92));
       overflow:hidden;
-      cursor:pointer;
-      user-select:none;
+      box-shadow: var(--shadow);
     }
-    .cardRow{ display:flex; gap:12px; align-items:flex-start; }
 
-    .posterWrap{
-      width: 58px;
-      min-width: 58px;
-      height: 86px;
-      border-radius: 10px;
+    /* Mobile list alignment fix: use grid inside card so wrap doesn't shift stuff */
+    .cardInner{
+      display:grid;
+      grid-template-columns: 82px 1fr 56px;
+      gap: 12px;
+      padding: 12px;
+      align-items: start;
+      min-height: 92px;
+    }
+    @media (max-width: 720px){
+      .cardInner{
+        grid-template-columns: 70px 1fr 52px;
+        gap: 10px;
+        padding: 12px;
+      }
+    }
+
+    .poster{
+      width: 70px;
+      height: 70px;
+      border-radius: 12px;
+      border: 1px solid rgba(43,43,73,.85);
+      background: rgba(12,12,22,.7);
       overflow:hidden;
-      border: 1px solid rgba(43,43,73,.7);
-      background: rgba(15,15,25,.55);
       display:flex;
       align-items:center;
       justify-content:center;
-      user-select:none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
     }
-    .poster{
+    .poster img{
       width:100%;
       height:100%;
       object-fit: cover;
       display:block;
-      opacity: 0;
-      transition: opacity .2s ease;
     }
-    .poster.loaded{ opacity: 1; }
-    .posterPh{
-      width:100%;
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color: rgba(234,234,242,.25);
-      font-weight: 900;
-      letter-spacing: .6px;
+    .poster .ph{
       font-size: 10px;
-      text-transform: uppercase;
-      user-select:none;
+      color: rgba(167,167,194,.65);
+      text-align:center;
+      padding: 6px;
+      line-height:1.2;
     }
 
-    .content{ flex:1; min-width:0; }
-
-    .titleRow{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:8px;
-    }
     .title{
-      font-size:16px;
-      font-weight:950;
-      line-height:1.12;
-      margin:0;
-      min-width:0;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
+      font-size: 18px;
+      font-weight: 720;
+      margin: 0 0 6px;
+      letter-spacing:.1px;
+      line-height: 1.1;
+    }
+    @media (max-width: 720px){
+      .title{ font-size: 18px; }
     }
 
     .badges{
       display:flex;
       gap:8px;
-      align-items:center;
       flex-wrap:wrap;
-      justify-content:flex-end;
-      max-width: 62%;
+      align-items:center;
+      margin: 0 0 8px;
     }
-    .badge{
+    .pill{
       display:inline-flex;
       align-items:center;
       gap:6px;
-      padding:4px 9px;
-      border-radius:999px;
-      border:1px solid var(--beadBorder);
-      background:#0f0f19;
-      font-size:12px;
-      opacity:.92;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.9);
+      background: rgba(12,12,22,.65);
+      color: var(--muted);
+      font-size: 12px;
       white-space:nowrap;
-      font-weight:750;
-      letter-spacing:.15px;
     }
-    .badge.warn{ background:var(--warnBg); border-color:var(--warnBorder); color:var(--warnText); }
-    .badge.short{ background:#201d10; border-color:#5b4e1f; color:#ffe6a6; }
-    .badge.small{ opacity:.75; font-weight:650; }
-
-    /* Tight card actions live at top-right but small */
-    .actions{
-      display:flex;
-      gap:6px;
-      align-items:center;
-      justify-content:flex-end;
+    .pill.red{
+      border-color: rgba(255,107,122,.35);
+      background: rgba(255,107,122,.10);
+      color:#ffd6de;
     }
-    .act{
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      border: 1px solid rgba(43,43,73,.75);
-      background: rgba(0,0,0,.18);
-      color: rgba(234,234,242,.78);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      user-select:none;
-      font-weight: 950;
-      line-height:1;
-      flex: 0 0 auto;
-    }
-    .act:hover{
-      color: var(--text);
-      border-color: rgba(154,209,255,.55);
-      background: rgba(154,209,255,.10);
-    }
-    .act.hide:hover{
-      border-color: rgba(255,120,150,.55);
-      background: rgba(255,120,150,.10);
+    .pill.gold{
+      border-color: rgba(255,204,102,.35);
+      background: rgba(255,204,102,.10);
+      color:#ffe8bb;
     }
 
-    /* Month label spacing */
-    .monthRow{
+    /* Date beads */
+    .beadsRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .monthChip{
+      font-size: 12px;
+      color: rgba(167,167,194,.72);
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.65);
+      background: rgba(12,12,22,.35);
+    }
+    .beads{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       align-items:center;
-      min-height: 18px;
-      margin: 0 0 6px;
     }
-    .monthTag{
-      font-size:12px;
-      color: var(--muted2);
-      border:1px solid rgba(43,43,73,.65);
-      background: rgba(15,15,25,.55);
-      padding:3px 9px;
-      border-radius:999px;
-      line-height: 1.2;
-    }
-
-    .beads{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
     .bead{
-      width:34px; height:34px;
-      border-radius:999px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:12px; font-weight:950;
-      letter-spacing:.2px;
-      background:var(--bead);
-      border:1px solid var(--beadBorder);
-      color: var(--text);
-    }
-    .bead.dim{ opacity:.35; background: rgba(15,15,25,.6); }
-    .bead.today{
-      background: rgba(29,42,58,.95);
-      border-color: rgba(107,184,255,.85);
-      box-shadow: 0 0 0 2px rgba(107,184,255,.12);
-    }
-    .gapDots{
-      width: 22px;
+      width: 34px;
       height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.9);
+      background: rgba(12,12,22,.6);
       display:flex;
       align-items:center;
       justify-content:center;
-      color: rgba(234,234,242,.22);
-      font-weight: 900;
-      letter-spacing: 2px;
-      user-select:none;
+      font-size: 12px;
+      color: rgba(167,167,194,.8);
+    }
+    .bead.on{
+      border-color: rgba(126,199,255,.65);
+      box-shadow: 0 0 0 2px rgba(126,199,255,.08);
+      color:#eaf6ff;
+      background: rgba(126,199,255,.10);
+      font-weight: 700;
+    }
+    .bead.today{
+      outline: 2px solid rgba(81,216,138,.35);
+      outline-offset: 2px;
     }
 
-    /* muted collapse in list view (super minimal) */
-    .mutedCard{
-      padding: 10px 12px;
-      opacity: .33;
-      filter: saturate(.55);
-      cursor: default;
-    }
-    .mutedCard .muteRow{
+    /* Actions column */
+    .actions{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      flex-direction:column;
+      gap:8px;
+      align-items:flex-end;
+      padding-top: 2px;
     }
-    .mutedCard .title{ font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
-
-    /* ---------- CALENDAR MODE ---------- */
-    .calTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin: 14px 0 10px;
-      flex-wrap: wrap;
-    }
-    .calTitle{
-      font-size: 18px;
-      font-weight: 950;
-      margin: 0;
-    }
-    .calNav{ display:flex; align-items:center; gap:10px; }
-
     .iconBtn{
       width: 34px;
       height: 34px;
-      border-radius: 10px;
-      border: 1px solid var(--beadBorder);
-      background: rgba(15,15,25,.55);
+      border-radius: 11px;
+      border: 1px solid rgba(43,43,73,.95);
+      background: rgba(12,12,22,.6);
       color: var(--text);
       cursor:pointer;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight: 950;
-      user-select:none;
+      font-size: 18px;
+      line-height:1;
+      opacity:.9;
     }
-    .iconBtn:hover{
-      border-color: rgba(154,209,255,.55);
-      background: rgba(154,209,255,.10);
+    .iconBtn:hover{ background: rgba(20,20,36,.72); opacity:1; }
+    .iconBtn.dim{ opacity:.55; }
+
+    .mutedCard{
+      opacity:.55;
+      filter: saturate(.75);
     }
-    .todayBtn{
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--beadBorder);
-      background: rgba(15,15,25,.55);
-      color: var(--text);
-      cursor:pointer;
-      font-weight: 900;
+    .mutedCard .beadsRow,
+    .mutedCard .badges{
+      display:none;
     }
-    .todayBtn:hover{
-      border-color: rgba(154,209,255,.55);
-      background: rgba(154,209,255,.10);
+    .mutedCard .cardInner{
+      min-height: 76px;
     }
 
-    .calGrid{
-      display:grid;
-      grid-template-columns: repeat(7, minmax(170px, 1fr));
-      gap: 12px;
-      width: 100%;
-      overflow-x: auto;
-      padding-bottom: 8px;
-    }
-
-    .dayCol{
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(16,16,26,.75);
-      box-shadow: var(--shadow);
-      padding: 10px;
-      min-height: 460px;
-    }
-
-    .dayHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:baseline;
-      gap:10px;
-      padding: 2px 2px 10px;
-      border-bottom: 1px solid rgba(35,35,58,.6);
-      margin-bottom: 10px;
-    }
-    .dayDow{
-      font-size: 12px;
-      font-weight: 950;
-      letter-spacing: .5px;
-      opacity: .7;
-      text-transform: uppercase;
-    }
-    .dayDate{
-      font-size: 14px;
-      font-weight: 950;
-      opacity: .9;
-    }
-
-    .calItem{
-      position: relative;
-      display:flex;
-      align-items:center;
-      gap: 8px;
-      padding: 9px 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(35,35,58,.65);
-      background: rgba(15,15,25,.55);
-      margin-bottom: 8px;
-      min-width: 0;
-      overflow:hidden;
-      cursor:pointer;
-      user-select:none;
-    }
-    .calItem.hasPoster{ background: #0f0f19; }
-    .calBg{
+    /* Poster background toggle (aesthetic menace) */
+    .posterBg{
       position:absolute;
       inset:0;
       background-size: cover;
       background-position: center;
-      transform: scale(1.04);
-      opacity: .58;
-      filter: saturate(1.05) contrast(1.06);
+      opacity: .18;
+      filter: blur(0px) saturate(1.1);
+      transform: scale(1.02);
     }
-    .calShade{
+    .posterBg:after{
+      content:"";
       position:absolute;
       inset:0;
-      background: linear-gradient(90deg, rgba(11,11,15,.92), rgba(11,11,15,.68) 55%, rgba(11,11,15,.92));
-    }
-    .dot{
-      width: 10px; height: 10px;
-      border-radius: 999px;
-      background: rgba(154,209,255,.9);
-      box-shadow: 0 0 0 3px rgba(154,209,255,.10);
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-    .dot.soon{ background: rgba(255,120,150,.95); box-shadow: 0 0 0 3px rgba(255,120,150,.12); }
-    .dot.short{ background: rgba(255,220,120,.95); box-shadow: 0 0 0 3px rgba(255,220,120,.10); }
-    .calName{
-      flex: 1 1 auto;
-      min-width: 0;
-      font-weight: 950;
-      font-size: 13px;
-      line-height: 1.1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: .96;
-      position: relative;
-      z-index: 2;
-      text-shadow: 0 2px 10px rgba(0,0,0,.55);
-    }
-    .calActions{
-      display:flex;
-      align-items:center;
-      gap: 6px;
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-    .actCal{
-      width: 26px; height: 26px;
-      border-radius: 9px;
-      border: 1px solid rgba(43,43,73,.75);
-      background: rgba(0,0,0,.22);
-      color: rgba(234,234,242,.80);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      user-select:none;
-      font-weight: 950;
-      line-height: 1;
-      text-shadow:none;
-    }
-    .actCal:hover{
-      color: var(--text);
-      border-color: rgba(154,209,255,.55);
-      background: rgba(154,209,255,.10);
-    }
-    .actCal.hide:hover{
-      border-color: rgba(255,120,150,.55);
-      background: rgba(255,120,150,.10);
-    }
-    .calItem.muted{
-      opacity: .40;
-      filter: saturate(.6);
+      background: linear-gradient(90deg, rgba(7,7,11,.92), rgba(7,7,11,.62) 55%, rgba(7,7,11,.90));
     }
 
-    .moreLink{
-      display:block;
-      margin-top: 6px;
-      font-size: 12px;
-      opacity: .65;
-      cursor: pointer;
-      user-select:none;
-    }
-    .moreLink:hover{ opacity: .9; }
-
-    /* ---------- DETAIL DRAWER ---------- */
+    /* Drawer */
     .drawerBackdrop{
       position: fixed;
-      inset: 0;
+      inset:0;
       background: rgba(0,0,0,.55);
+      z-index: 80;
       display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding: 18px;
-      z-index: 50;
     }
-    .drawerBackdrop.open{ display:flex; }
-
+    .drawerBackdrop.open{ display:block; }
     .drawer{
-      width: 100%;
-      max-width: 860px;
-      border-radius: 18px;
-      border: 1px solid rgba(35,35,58,.8);
-      background: rgba(16,16,26,.96);
-      box-shadow: 0 25px 60px rgba(0,0,0,.6);
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      width: min(460px, calc(100vw - 36px));
+      max-height: calc(100vh - 36px);
+      overflow:auto;
+      border-radius: 16px;
+      border: 1px solid rgba(34,34,58,.9);
+      background: rgba(12,12,22,.92);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      z-index: 90;
+      display:none;
+    }
+    .drawer.open{ display:block; }
+    @media (max-width: 720px){
+      .drawer{
+        right: 10px;
+        left: 10px;
+        width: auto;
+        top: auto;
+        bottom: 10px;
+        max-height: 75vh;
+      }
+    }
+    .drawerHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 12px 12px 8px;
+      border-bottom: 1px solid rgba(34,34,58,.75);
+    }
+    .drawerTitle{
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .drawerBody{ padding: 12px; }
+    .drawerRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(34,34,58,.55);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .drawerRow:last-child{ border-bottom:none; }
+    .drawerRow strong{ color: var(--text); font-weight:700; }
+
+    .danger{
+      border-color: rgba(255,107,122,.5) !important;
+      background: rgba(255,107,122,.10) !important;
+      color:#ffd6de !important;
+    }
+
+    .error{
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,107,122,.45);
+      background: rgba(255,107,122,.10);
+      color:#ffd6de;
+      white-space: pre-wrap;
+      box-shadow: var(--shadow);
+    }
+
+    /* ===== Calendar (Desktop weekly grid) ===== */
+    .calWrap{
+      margin-top: 8px;
+      border-radius: 16px;
+      border: 1px solid rgba(34,34,58,.85);
+      background: rgba(12,12,22,.6);
+      box-shadow: var(--shadow);
       overflow:hidden;
     }
 
-    .drawerTop{
-      padding: 12px 14px;
+    .calTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 12px;
+      gap: 10px;
+      border-bottom: 1px solid rgba(34,34,58,.75);
+    }
+    .calRange{
+      font-weight: 800;
+      letter-spacing:.2px;
+    }
+    .calNav{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .calGrid{
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0,1fr));
+      gap: 0;
+      min-height: 460px;
+    }
+    .calDay{
+      border-right: 1px solid rgba(34,34,58,.6);
+      border-bottom: 1px solid rgba(34,34,58,.6);
+      padding: 10px;
+      min-height: 180px;
+    }
+    .calDay:last-child{ border-right:none; }
+    .calDayHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .calDayHead strong{
+      color:#eaf6ff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .calItems{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .calItem{
+      position: relative;
+      border-radius: 12px;
+      border: 1px solid rgba(43,43,73,.85);
+      background: rgba(10,10,18,.72);
+      padding: 8px 8px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
-      border-bottom: 1px solid rgba(35,35,58,.7);
-    }
-    .drawerTitle{
-      font-weight: 1000;
-      letter-spacing: .2px;
-      margin: 0;
-      font-size: 16px;
-      line-height: 1.1;
-    }
-    .drawerClose{
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      border: 1px solid rgba(43,43,73,.75);
-      background: rgba(0,0,0,.18);
-      color: rgba(234,234,242,.85);
-      cursor:pointer;
-      font-weight: 1000;
-    }
-    .drawerClose:hover{
-      border-color: rgba(255,120,150,.55);
-      background: rgba(255,120,150,.10);
-      color: var(--text);
-    }
-
-    .drawerBody{
-      padding: 14px;
-      display:flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      align-items:flex-start;
-    }
-    .drawerPoster{
-      width: 110px;
-      height: 165px;
-      border-radius: 12px;
+      gap: 8px;
+      cursor: pointer;
       overflow:hidden;
-      border: 1px solid rgba(43,43,73,.7);
-      background: rgba(15,15,25,.55);
+    }
+    .calItem .dot{
+      width: 10px; height: 10px; border-radius: 999px;
+      background: rgba(126,199,255,.6);
+      border: 1px solid rgba(126,199,255,.45);
       flex: 0 0 auto;
     }
-    .drawerPoster img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
+    .calItem .name{
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 12px;
+      color: #eaeaf2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .drawerInfo{
-      flex: 1 1 360px;
-      min-width: 260px;
+    .calItem .mini{
+      display:flex;
+      gap:6px;
+      flex: 0 0 auto;
+      opacity:.9;
     }
-    .drawerPlan{
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 10px;
+    .miniBtn{
+      width: 26px; height: 26px;
+      border-radius: 10px;
+      border: 1px solid rgba(43,43,73,.9);
+      background: rgba(12,12,22,.55);
+      color:#eaeaf2;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 14px;
     }
-    .drawerBadges{
+    .miniBtn:hover{ background: rgba(20,20,36,.75); }
+
+    /* optional poster background in calendar items */
+    .calItem.bg{
+      background-size: cover;
+      background-position: center;
+    }
+    .calItem.bg:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(90deg, rgba(7,7,11,.88), rgba(7,7,11,.52) 55%, rgba(7,7,11,.90));
+    }
+    .calItem.bg > *{ position: relative; z-index: 1; }
+
+    /* Muted in calendar: dim + push down if option enabled */
+    .calItem.muted{ opacity:.55; }
+
+    /* ===== Mobile Calendar (Day view) ===== */
+    .mcal{
+      display:none;
+      margin-top: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(34,34,58,.85);
+      background: rgba(12,12,22,.6);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .mcalHead{
+      position: sticky;
+      top: 0;
+      z-index: 55;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid rgba(34,34,58,.75);
+      background: rgba(7,7,11,.65);
+      backdrop-filter: blur(10px);
+    }
+    .mcalHead .left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .mcalTitle{
+      font-weight: 900;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .mcalHead .right{
       display:flex;
       gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
+      align-items:center;
+      flex: 0 0 auto;
     }
-    .drawerActions{
+    .mcalBody{
+      padding: 10px;
+    }
+    .mcalList{
       display:flex;
+      flex-direction:column;
       gap: 10px;
-      flex-wrap: wrap;
-      margin: 6px 0 10px;
     }
-    .drawerActions .btn{ padding: 9px 12px; }
-
-    .drawerMonth{ margin-bottom: 8px; }
-    .drawerMonth .monthTag{ font-size: 12px; }
-
-    @media (max-width: 700px){
-      body{ padding: 12px; }
-      .calGrid{ grid-template-columns: repeat(7, minmax(240px, 1fr)); }
-      .dayCol{ min-height: 420px; }
-      .posterWrap{ width: 50px; min-width:50px; height:74px; }
-      .bead{ width:30px; height:30px; }
-      .gapDots{ height:30px; }
-      .drawerBackdrop{ padding: 10px; }
+    .mItem{
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid rgba(43,43,73,.85);
+      background: rgba(10,10,18,.72);
+      padding: 10px;
+      display:grid;
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+      overflow:hidden;
+      cursor:pointer;
     }
+    .mItem.bg{
+      background-size: cover;
+      background-position: center;
+    }
+    .mItem.bg:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(90deg, rgba(7,7,11,.92), rgba(7,7,11,.55) 62%, rgba(7,7,11,.92));
+    }
+    .mItem.bg > *{ position: relative; z-index:1; }
+
+    .mPoster{
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      overflow:hidden;
+      border: 1px solid rgba(43,43,73,.75);
+      background: rgba(12,12,22,.55);
+    }
+    .mPoster img{ width:100%; height:100%; object-fit: cover; display:block; }
+
+    .mName{
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.15;
+      margin: 0 0 6px;
+    }
+    .mMeta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      color: rgba(167,167,194,.85);
+      font-size: 12px;
+    }
+    .mDot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: rgba(126,199,255,.6);
+      border: 1px solid rgba(126,199,255,.4);
+    }
+    .mTag{
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,43,73,.85);
+      background: rgba(12,12,22,.45);
+      font-size: 12px;
+    }
+    .mTag.red{ border-color: rgba(255,107,122,.35); background: rgba(255,107,122,.10); color:#ffd6de; }
+    .mTag.gold{ border-color: rgba(255,204,102,.35); background: rgba(255,204,102,.10); color:#ffe8bb; }
+
+    .mEmpty{
+      padding: 14px;
+      color: var(--muted);
+      border-radius: 14px;
+      border: 1px dashed rgba(43,43,73,.9);
+      background: rgba(12,12,22,.35);
+    }
+
+    /* Show/Hide calendar blocks based on width */
+    @media (max-width: 760px){
+      .calWrap{ display:none; }
+      .mcal{ display:block; }
+      /* tighten list cards slightly */
+      .title{ font-size: 18px; }
+    }
+
+    a{ color: var(--accent); text-decoration:none; }
+    a:hover{ text-decoration: underline; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <h1>Kalispell Showtimes</h1>
-    <div class="sub">List mode is now “scan mode.” All the planning words moved into the drawer. Tap a movie to open it.</div>
-
-    <div class="topRow">
-      <div class="bar views">
-        <button class="btn pill" id="modeCal">Calendar</button>
-        <button class="btn pill" id="modeList">List</button>
+    <header>
+      <div>
+        <h1>Kalispell Showtimes</h1>
+        <div class="sub">
+          List mode is “scan mode.” Calendar mode is date based (not showtime times yet).
+          Tap a movie to open details. Muted collapses it. Hidden removes it.
+        </div>
       </div>
+    </header>
 
-      <div class="bar controls">
-        <label for="days">Days ahead</label>
-        <input id="days" type="number" min="1" max="365" value="60" />
-
-        <button class="btn primary" id="refresh">Refresh</button>
-        <button class="btn" id="debug">Debug</button>
-
-        <input id="q" class="search" placeholder="search titles…" />
-
-        <label class="toggle" title="Group into Now / Next / Later in List view">
-          <input id="grouped" type="checkbox" checked />
-          grouped
-        </label>
-
-        <label class="toggle" title="Show only titles ending within 3 days">
-          <input id="onlySoon" type="checkbox" />
-          leaving soon
-        </label>
-
-        <label class="toggle" title="Muted titles render at the bottom">
-          <input id="mutedBottom" type="checkbox" checked />
-          muted to bottom
-        </label>
-
-        <label class="toggle" title="Use poster as background in Calendar rows">
-          <input id="calPosterBg" type="checkbox" checked />
-          poster bg
-        </label>
-
-        <button class="btn" id="manageBtn">Manage hidden + muted</button>
-
-        <span class="spacer"></span>
-
-        <button class="btn pill active" data-sort="plan">Plan</button>
-        <button class="btn pill" data-sort="long">Long</button>
-        <button class="btn pill" data-sort="short">Short</button>
-      </div>
-    </div>
-
-    <div id="meta" class="meta"></div>
-
-    <div id="mgr" class="mgr">
-      <div class="mgrHead">
-        <h2 class="mgrTitle">Hidden and Muted Manager</h2>
-        <button class="btn" id="closeMgr">Close</button>
-      </div>
-
-      <div class="mgrGrid">
-        <div class="mgrBox">
-          <h3>Hidden</h3>
-          <div id="hiddenList" class="mgrList"></div>
+    <div class="bar">
+      <div class="controls">
+        <!-- Views -->
+        <div class="group">
+          <div class="seg" role="tablist" aria-label="Views">
+            <button id="viewList" class="active" type="button">List</button>
+            <button id="viewCal" type="button">Calendar</button>
+          </div>
         </div>
 
-        <div class="mgrBox">
-          <h3>Muted</h3>
-          <div id="mutedList" class="mgrList"></div>
+        <!-- Inputs -->
+        <div class="group">
+          <label for="days">Days ahead</label>
+          <input id="days" type="number" min="1" max="365" value="60"/>
+          <button class="btn" id="go" type="button">Refresh</button>
+          <button class="btn" id="debug" type="button">Debug</button>
+          <input id="search" type="text" placeholder="search titles..." />
+        </div>
+
+        <!-- Filters -->
+        <div class="group">
+          <label class="chk"><input id="grouped" type="checkbox" checked> grouped</label>
+          <label class="chk"><input id="onlyLeaving" type="checkbox"> leaving soon</label>
+          <label class="chk"><input id="mutedBottom" type="checkbox" checked> muted to bottom</label>
+          <label class="chk"><input id="posterBgToggle" type="checkbox"> poster bg</label>
+          <button class="btn" id="manage" type="button">Manage hidden + muted</button>
+        </div>
+
+        <!-- Sort / density -->
+        <div class="group" style="margin-left:auto;">
+          <div class="seg" aria-label="Sort">
+            <button id="sortPlan" class="active" type="button">Plan</button>
+            <button id="sortLong" type="button">Long</button>
+            <button id="sortShort" type="button">Short</button>
+          </div>
         </div>
       </div>
 
-      <div class="mgrFoot">
-        <button class="btn" id="clearHidden">Clear hidden</button>
-        <button class="btn" id="clearMuted">Clear muted</button>
-        <button class="btn" id="clearAll">Clear both</button>
-      </div>
+      <div class="meta" id="meta"></div>
     </div>
 
     <div id="out"></div>
-  </div>
 
-  <!-- DETAIL DRAWER -->
-  <div id="drawerBackdrop" class="drawerBackdrop" role="dialog" aria-modal="true">
-    <div class="drawer">
-      <div class="drawerTop">
-        <h3 id="drawerTitle" class="drawerTitle">Title</h3>
-        <button id="drawerClose" class="drawerClose" aria-label="Close">×</button>
+    <!-- Desktop calendar -->
+    <div class="calWrap" id="calWrap" style="display:none;">
+      <div class="calTop">
+        <div class="calRange" id="calRange">Calendar</div>
+        <div class="calNav">
+          <button class="btn" id="calPrev" type="button">◀</button>
+          <button class="btn" id="calToday" type="button">Today</button>
+          <button class="btn" id="calNext" type="button">▶</button>
+        </div>
       </div>
-      <div class="drawerBody">
-        <div class="drawerPoster">
-          <img id="drawerPosterImg" alt="Poster" />
+      <div class="calGrid" id="calGrid"></div>
+    </div>
+
+    <!-- Mobile day calendar -->
+    <div class="mcal" id="mcal" style="display:none;">
+      <div class="mcalHead">
+        <div class="left">
+          <button class="btn" id="mPrev" type="button">◀</button>
+          <div class="mcalTitle" id="mTitle">Today</div>
+          <button class="btn" id="mNext" type="button">▶</button>
         </div>
-        <div class="drawerInfo">
-          <div id="drawerBadges" class="drawerBadges"></div>
-          <div id="drawerPlan" class="drawerPlan"></div>
-          <div class="drawerActions">
-            <button class="btn" id="drawerMute">Mute</button>
-            <button class="btn" id="drawerHide">Hide</button>
-          </div>
-          <div id="drawerMonth" class="drawerMonth"></div>
-          <div id="drawerBeads" class="beads"></div>
+        <div class="right">
+          <button class="btn" id="mToday" type="button">Today</button>
         </div>
+      </div>
+      <div class="mcalBody">
+        <div class="mcalList" id="mList"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    const out = document.getElementById("out");
-    const meta = document.getElementById("meta");
+  <!-- Drawer -->
+  <div id="drawerBackdrop" class="drawerBackdrop"></div>
+  <div id="drawer" class="drawer" role="dialog" aria-modal="true">
+    <div class="drawerHead">
+      <div class="drawerTitle" id="drawerTitle">Movie</div>
+      <button class="btn" id="drawerClose" type="button">Close</button>
+    </div>
+    <div class="drawerBody" id="drawerBody"></div>
+  </div>
 
-    const daysEl = document.getElementById("days");
-    const onlySoonEl = document.getElementById("onlySoon");
-    const groupedEl = document.getElementById("grouped");
-    const mutedBottomEl = document.getElementById("mutedBottom");
-    const calPosterBgEl = document.getElementById("calPosterBg");
-    const qEl = document.getElementById("q");
+<script>
+(() => {
+  const out = document.getElementById("out");
+  const meta = document.getElementById("meta");
 
-    const sortButtons = Array.from(document.querySelectorAll(".btn.pill[data-sort]"));
+  const daysEl = document.getElementById("days");
+  const searchEl = document.getElementById("search");
 
-    const mgrEl = document.getElementById("mgr");
-    const hiddenListEl = document.getElementById("hiddenList");
-    const mutedListEl = document.getElementById("mutedList");
+  const viewListBtn = document.getElementById("viewList");
+  const viewCalBtn = document.getElementById("viewCal");
 
-    const drawerBackdrop = document.getElementById("drawerBackdrop");
-    const drawerTitle = document.getElementById("drawerTitle");
-    const drawerPosterImg = document.getElementById("drawerPosterImg");
-    const drawerBadges = document.getElementById("drawerBadges");
-    const drawerPlan = document.getElementById("drawerPlan");
-    const drawerMonth = document.getElementById("drawerMonth");
-    const drawerBeads = document.getElementById("drawerBeads");
-    const drawerMuteBtn = document.getElementById("drawerMute");
-    const drawerHideBtn = document.getElementById("drawerHide");
-    const drawerCloseBtn = document.getElementById("drawerClose");
+  const groupedEl = document.getElementById("grouped");
+  const onlyLeavingEl = document.getElementById("onlyLeaving");
+  const mutedBottomEl = document.getElementById("mutedBottom");
+  const posterBgToggleEl = document.getElementById("posterBgToggle");
 
-    const HIDDEN_KEY = "kalispell_hidden_titles_v9";
-    const MUTED_KEY  = "kalispell_muted_titles_v9";
-    const MODE_KEY   = "kalispell_mode_v9";
-    const WEEK_KEY   = "kalispell_week_offset_v9";
+  const sortPlanBtn = document.getElementById("sortPlan");
+  const sortLongBtn = document.getElementById("sortLong");
+  const sortShortBtn = document.getElementById("sortShort");
 
-    function loadSet(key){
-      try{
-        const raw = localStorage.getItem(key);
-        const arr = raw ? JSON.parse(raw) : [];
-        return new Set(Array.isArray(arr) ? arr : []);
-      }catch{
-        return new Set();
-      }
+  const calWrap = document.getElementById("calWrap");
+  const calRange = document.getElementById("calRange");
+  const calGrid = document.getElementById("calGrid");
+  const calPrev = document.getElementById("calPrev");
+  const calNext = document.getElementById("calNext");
+  const calToday = document.getElementById("calToday");
+
+  const mcal = document.getElementById("mcal");
+  const mTitle = document.getElementById("mTitle");
+  const mList = document.getElementById("mList");
+  const mPrev = document.getElementById("mPrev");
+  const mNext = document.getElementById("mNext");
+  const mToday = document.getElementById("mToday");
+
+  const drawerBackdrop = document.getElementById("drawerBackdrop");
+  const drawer = document.getElementById("drawer");
+  const drawerTitle = document.getElementById("drawerTitle");
+  const drawerBody = document.getElementById("drawerBody");
+  const drawerClose = document.getElementById("drawerClose");
+
+  // Local storage keys
+  const LS = {
+    hidden: "kshow_hidden_v1",
+    muted: "kshow_muted_v1",
+    view: "kshow_view_v1",
+    sort: "kshow_sort_v1",
+    grouped: "kshow_grouped_v1",
+    onlyLeaving: "kshow_onlyLeaving_v1",
+    mutedBottom: "kshow_mutedBottom_v1",
+    posterBg: "kshow_posterBg_v1",
+    days: "kshow_days_v1",
+    search: "kshow_search_v1",
+    calAnchor: "kshow_calAnchor_v1",
+    mAnchor: "kshow_mAnchor_v1",
+  };
+
+  function loadJSON(key, fallback){
+    try { return JSON.parse(localStorage.getItem(key) || "") ?? fallback; } catch { return fallback; }
+  }
+  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+  function normTitle(t){
+    return (t||"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();
+  }
+  function esc(s){
+    return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+  function isoToDate(iso){
+    // iso like 2026-01-12
+    const [y,m,d] = iso.split("-").map(n => parseInt(n,10));
+    return new Date(y, m-1, d);
+  }
+  function sameDay(a,b){
+    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+  function fmtMonthDay(d){
+    const mo = d.toLocaleString(undefined,{month:"short"});
+    return `${mo} ${d.getDate()}`;
+  }
+  function fmtDowMonthDay(d){
+    const dow = d.toLocaleString(undefined,{weekday:"short"});
+    const mo = d.toLocaleString(undefined,{month:"short"});
+    return `${dow} ${mo} ${d.getDate()}`;
+  }
+  function fmtRange(a,b){
+    const aStr = fmtMonthDay(a);
+    const bStr = fmtMonthDay(b);
+    const yr = a.getFullYear();
+    return `${aStr} – ${bStr}, ${yr}`;
+  }
+
+  // State
+  let state = {
+    movies: [],
+    generated_at: "",
+    source: "",
+    days_ahead: 60,
+    view: "list",   // list | cal
+    sort: "plan",   // plan | long | short
+    hidden: new Set(loadJSON(LS.hidden, [])),
+    muted: new Set(loadJSON(LS.muted, [])),
+    calAnchor: loadJSON(LS.calAnchor, null),
+    mAnchor: loadJSON(LS.mAnchor, null),
+  };
+
+  // Restore UI prefs
+  (function restorePrefs(){
+    const d = parseInt(localStorage.getItem(LS.days) || "60", 10);
+    daysEl.value = String(Math.max(1, Math.min(365, isNaN(d)?60:d)));
+
+    searchEl.value = localStorage.getItem(LS.search) || "";
+
+    groupedEl.checked = (localStorage.getItem(LS.grouped) ?? "true") === "true";
+    onlyLeavingEl.checked = (localStorage.getItem(LS.onlyLeaving) ?? "false") === "true";
+    mutedBottomEl.checked = (localStorage.getItem(LS.mutedBottom) ?? "true") === "true";
+    posterBgToggleEl.checked = (localStorage.getItem(LS.posterBg) ?? "false") === "true";
+
+    state.view = (localStorage.getItem(LS.view) || "list");
+    state.sort = (localStorage.getItem(LS.sort) || "plan");
+  })();
+
+  function setView(v){
+    state.view = v;
+    localStorage.setItem(LS.view, v);
+    viewListBtn.classList.toggle("active", v==="list");
+    viewCalBtn.classList.toggle("active", v==="cal");
+
+    // list vs calendar containers
+    if (v==="list"){
+      calWrap.style.display = "none";
+      mcal.style.display = "none";
+      out.style.display = "block";
+    } else {
+      out.style.display = "none";
+      // responsive: desktop weekly calendar uses calWrap, mobile uses mcal via CSS media query
+      calWrap.style.display = "block";
+      mcal.style.display = "block";
     }
-    function saveSet(key, set){
-      localStorage.setItem(key, JSON.stringify(Array.from(set)));
-    }
 
-    let hiddenSet = loadSet(HIDDEN_KEY);
-    let mutedSet  = loadSet(MUTED_KEY);
+    render();
+  }
 
-    function hideTitle(title){
-      hiddenSet.add(title);
-      mutedSet.delete(title);
-      saveSet(HIDDEN_KEY, hiddenSet);
-      saveSet(MUTED_KEY, mutedSet);
-      closeDrawer();
+  function setSort(s){
+    state.sort = s;
+    localStorage.setItem(LS.sort, s);
+    sortPlanBtn.classList.toggle("active", s==="plan");
+    sortLongBtn.classList.toggle("active", s==="long");
+    sortShortBtn.classList.toggle("active", s==="short");
+    render();
+  }
+
+  function persistChecks(){
+    localStorage.setItem(LS.grouped, String(groupedEl.checked));
+    localStorage.setItem(LS.onlyLeaving, String(onlyLeavingEl.checked));
+    localStorage.setItem(LS.mutedBottom, String(mutedBottomEl.checked));
+    localStorage.setItem(LS.posterBg, String(posterBgToggleEl.checked));
+  }
+
+  // Drawer
+  function closeDrawer(){
+    drawerBackdrop.classList.remove("open");
+    drawer.classList.remove("open");
+  }
+  function openDrawer(movie){
+    const n = normTitle(movie.title);
+    const isHidden = state.hidden.has(n);
+    const isMuted = state.muted.has(n);
+
+    drawerTitle.textContent = movie.title;
+
+    const showDates = (movie.show_dates || []).map(isoToDate);
+    const today = new Date();
+    const next = showDates.find(d => d >= startOfDay(today)) || null;
+    const end = showDates.length ? showDates[showDates.length-1] : null;
+
+    const nextText = next ? fmtDowMonthDay(next) : "none found";
+    const endIn = end ? Math.round((startOfDay(end) - startOfDay(today)) / 86400000) : null;
+
+    const leavingSoon = endIn !== null && endIn >= 0 && endIn <= 2;
+    const shortRun = (movie.run_length_days || 0) <= 3;
+
+    drawerBody.innerHTML = `
+      <div class="drawerRow"><span>Status</span><strong>${isHidden ? "Hidden" : (isMuted ? "Muted" : "Normal")}</strong></div>
+      <div class="drawerRow"><span>Next showing</span><strong>${esc(nextText)}</strong></div>
+      <div class="drawerRow"><span>Ends in</span><strong>${endIn === null ? "?" : (endIn < 0 ? `${Math.abs(endIn)} days ago` : `${endIn} days`)}</strong></div>
+      <div class="drawerRow"><span>Listed days</span><strong>${movie.run_length_days || 0}</strong></div>
+      <div class="drawerRow"><span>Flags</span><strong>${leavingSoon ? "Leaving soon" : "—"} ${shortRun ? " Short run" : ""}</strong></div>
+
+      <div style="margin:12px 0 8px; color: var(--muted); font-size:12px;">Show dates</div>
+      <div class="beads" style="gap:8px; margin-bottom: 12px;">
+        ${(movie.show_dates || []).map(iso => {
+          const d = isoToDate(iso);
+          const day = d.getDate();
+          const on = true;
+          const isToday = sameDay(d, today);
+          return `<div class="bead on ${isToday ? "today" : ""}" title="${esc(fmtDowMonthDay(d))}">${day}</div>`;
+        }).join("")}
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn ${isMuted ? "" : ""}" id="drawerMute">${isMuted ? "Unmute" : "Mute"}</button>
+        <button class="btn danger" id="drawerHide">${isHidden ? "Unhide" : "Hide"}</button>
+      </div>
+
+      <div style="margin-top:12px; color: rgba(167,167,194,.7); font-size:12px;">
+        Tip: Mute collapses the card. Hide removes it completely (until you unhide it in Manage).
+      </div>
+    `;
+
+    drawerBackdrop.classList.add("open");
+    drawer.classList.add("open");
+
+    document.getElementById("drawerMute").onclick = () => {
+      toggleMuted(n);
+      openDrawer(movie); // refresh drawer content
       render();
-    }
-    function unhideTitle(title){
-      hiddenSet.delete(title);
-      saveSet(HIDDEN_KEY, hiddenSet);
+    };
+    document.getElementById("drawerHide").onclick = () => {
+      toggleHidden(n);
+      openDrawer(movie);
       render();
-    }
-    function toggleMute(title){
-      if(mutedSet.has(title)) mutedSet.delete(title);
-      else mutedSet.add(title);
-      saveSet(MUTED_KEY, mutedSet);
-      closeDrawer();
-      render();
-    }
+    };
+  }
 
-    function openMgr(){
-      mgrEl.classList.add("open");
-      renderMgr();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    function closeMgr(){
-      mgrEl.classList.remove("open");
-    }
+  drawerBackdrop.addEventListener("click", closeDrawer);
+  drawerClose.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
 
-    function escapeHtml(s) {
-      return (s || "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;");
-    }
-    function escapeAttr(s){
-      return (s || "")
-        .replaceAll("&","&amp;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;");
-    }
+  function startOfDay(d){
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
 
-    function renderMgr(){
-      const hidden = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
-      const muted  = Array.from(mutedSet).sort((a,b)=>a.localeCompare(b));
+  // Hidden / Muted
+  function toggleHidden(n){
+    if (state.hidden.has(n)) state.hidden.delete(n);
+    else state.hidden.add(n);
+    saveJSON(LS.hidden, Array.from(state.hidden));
+  }
+  function toggleMuted(n){
+    if (state.muted.has(n)) state.muted.delete(n);
+    else state.muted.add(n);
+    saveJSON(LS.muted, Array.from(state.muted));
+  }
 
-      hiddenListEl.innerHTML = hidden.length ? hidden.map(t => `
-        <div class="mgrRow">
-          <div class="mgrName">${escapeHtml(t)}</div>
-          <div class="mgrBtns">
-            <div class="mini" title="unhide" data-unhide="${escapeAttr(t)}">↩</div>
-            <div class="mini danger" title="remove" data-unhide="${escapeAttr(t)}">×</div>
-          </div>
+  // Manage drawer (hidden + muted)
+  function openManage(){
+    const hidden = Array.from(state.hidden).sort();
+    const muted = Array.from(state.muted).sort();
+
+    drawerTitle.textContent = "Manage hidden + muted";
+    drawerBody.innerHTML = `
+      <div style="color: var(--muted); font-size:12px; margin-bottom:10px;">
+        Hidden = removed entirely. Muted = collapsed + dimmed (and can be pushed to bottom).
+      </div>
+
+      <div style="margin:10px 0 6px; font-weight:800;">Hidden (${hidden.length})</div>
+      ${hidden.length ? hidden.map(n => `
+        <div class="drawerRow">
+          <span>${esc(n)}</span>
+          <button class="btn danger" data-unhide="${esc(n)}">Unhide</button>
         </div>
-      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing hidden</div>`;
+      `).join("") : `<div style="color: rgba(167,167,194,.7); font-size:12px;">None</div>`}
 
-      mutedListEl.innerHTML = muted.length ? muted.map(t => `
-        <div class="mgrRow">
-          <div class="mgrName">${escapeHtml(t)}</div>
-          <div class="mgrBtns">
-            <div class="mini" title="unmute" data-mute="${escapeAttr(t)}">+</div>
-            <div class="mini danger" title="hide" data-hide="${escapeAttr(t)}">×</div>
-          </div>
+      <div style="margin:14px 0 6px; font-weight:800;">Muted (${muted.length})</div>
+      ${muted.length ? muted.map(n => `
+        <div class="drawerRow">
+          <span>${esc(n)}</span>
+          <button class="btn" data-unmute="${esc(n)}">Unmute</button>
         </div>
-      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing muted</div>`;
+      `).join("") : `<div style="color: rgba(167,167,194,.7); font-size:12px;">None</div>`}
+    `;
 
-      hiddenListEl.querySelectorAll("[data-unhide]").forEach(el=>{
-        el.addEventListener("click", ()=>unhideTitle(el.getAttribute("data-unhide")));
-      });
-      mutedListEl.querySelectorAll("[data-mute]").forEach(el=>{
-        el.addEventListener("click", ()=>toggleMute(el.getAttribute("data-mute")));
-      });
-      mutedListEl.querySelectorAll("[data-hide]").forEach(el=>{
-        el.addEventListener("click", ()=>hideTitle(el.getAttribute("data-hide")));
-      });
-    }
+    drawerBackdrop.classList.add("open");
+    drawer.classList.add("open");
 
-    document.getElementById("manageBtn").addEventListener("click", openMgr);
-    document.getElementById("closeMgr").addEventListener("click", closeMgr);
-    document.getElementById("clearHidden").addEventListener("click", ()=>{
-      hiddenSet = new Set();
-      saveSet(HIDDEN_KEY, hiddenSet);
-      render(); renderMgr();
+    drawerBody.querySelectorAll("[data-unhide]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const n = btn.getAttribute("data-unhide");
+        toggleHidden(n);
+        openManage();
+        render();
+      });
     });
-    document.getElementById("clearMuted").addEventListener("click", ()=>{
-      mutedSet = new Set();
-      saveSet(MUTED_KEY, mutedSet);
-      render(); renderMgr();
+    drawerBody.querySelectorAll("[data-unmute]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const n = btn.getAttribute("data-unmute");
+        toggleMuted(n);
+        openManage();
+        render();
+      });
     });
-    document.getElementById("clearAll").addEventListener("click", ()=>{
-      hiddenSet = new Set();
-      mutedSet = new Set();
-      saveSet(HIDDEN_KEY, hiddenSet);
-      saveSet(MUTED_KEY, mutedSet);
-      render(); renderMgr();
-    });
-
-    function parseISODate(s){
-      const [y,m,d] = s.split("-").map(Number);
-      return new Date(y, m-1, d);
-    }
-    function daysBetween(a, b){
-      const ms = 24*60*60*1000;
-      const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-      const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-      return Math.round((ub - ua)/ms);
-    }
-    function getToday(){
-      const t = new Date();
-      return new Date(t.getFullYear(), t.getMonth(), t.getDate());
-    }
-
-    function runCount(movie){
-      return Array.isArray(movie.dates) ? movie.dates.length : (movie.run_length_days || 0);
-    }
-    function sortedDateObjs(movie){
-      const arr = Array.isArray(movie.dates) ? movie.dates.slice() : [];
-      arr.sort();
-      return arr.map(parseISODate);
-    }
-
-    function getNextShowing(movie, today){
-      const dates = sortedDateObjs(movie);
-      for(const d of dates){
-        if(daysBetween(today, d) >= 0) return d;
-      }
-      return null;
-    }
-    function getLastShowing(movie){
-      const dates = sortedDateObjs(movie);
-      return dates.length ? dates[dates.length - 1] : null;
-    }
-    function leavingSoon(movie, today){
-      const last = getLastShowing(movie);
-      if(!last) return false;
-      return daysBetween(today, last) <= 3;
-    }
-    function isShort(movie){ return runCount(movie) <= 3; }
-
-    function matchesSearch(movie){
-      const q = (qEl.value || "").trim().toLowerCase();
-      if(!q) return true;
-      return (movie.title || "").toLowerCase().includes(q);
-    }
-
-    function moviePassesFilters(movie, today){
-      if(hiddenSet.has(movie.title)) return false;
-      if(onlySoonEl.checked && !leavingSoon(movie, today)) return false;
-      if(!matchesSearch(movie)) return false;
-      return true;
-    }
-
-    function formatNextLabel(dt, today){
-      const diff = daysBetween(today, dt);
-      const w = dt.toLocaleString(undefined, { weekday: "short" });
-      const mon = dt.toLocaleString(undefined, { month: "short" });
-      const day = dt.getDate();
-      if(diff === 0) return `Today (${w})`;
-      if(diff === 1) return `Tomorrow (${w})`;
-      if(diff > 1 && diff <= 7) return `${w} (${mon} ${day})`;
-      return `${mon} ${day} (${w})`;
-    }
-
-    function buildBeads(movie, today){
-      const dates = sortedDateObjs(movie);
-      const beads = [];
-      const monthTags = [];
-
-      let lastMonthKey = null;
-      let prev = null;
-
-      for(const dt of dates){
-        if(prev){
-          const gap = daysBetween(prev, dt);
-          if(gap > 1) beads.push({ gap: true });
-        }
-        prev = dt;
-
-        const isToday = (dt.getFullYear()===today.getFullYear() && dt.getMonth()===today.getMonth() && dt.getDate()===today.getDate());
-        const isPast = (daysBetween(dt, today) < 0);
-
-        const monthKey = `${dt.getFullYear()}-${dt.getMonth()}`;
-        if(monthKey !== lastMonthKey){
-          monthTags.push(dt.toLocaleString(undefined, { month: "short" }));
-          lastMonthKey = monthKey;
-        }
-
-        beads.push({
-          label: String(dt.getDate()),
-          title: dt.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", weekday: "short" }),
-          cls: "bead" + (isPast ? " dim" : (isToday ? " today" : ""))
-        });
-      }
-
-      return { beads, monthTags };
-    }
-
-    function badgeHTML(movie, today){
-      const n = runCount(movie);
-      const soon = leavingSoon(movie, today);
-      const parts = [];
-      if(soon) parts.push(`<span class="badge warn">LEAVING SOON</span>`);
-      if(n <= 3) parts.push(`<span class="badge short">SHORT RUN</span>`);
-      parts.push(`<span class="badge small">${n} day${n===1?"":"s"}</span>`);
-      return parts.join("");
-    }
-
-    /* posters */
-    const posterCache = new Map();
-    async function fetchPoster(title){
-      if(posterCache.has(title)) return posterCache.get(title);
-      try{
-        const res = await fetch(`/api/poster?title=${encodeURIComponent(title)}`, { cache: "no-store" });
-        const data = await res.json();
-        const url = (data && data.ok) ? data.poster_url : null;
-        posterCache.set(title, url);
-        return url;
-      }catch{
-        posterCache.set(title, null);
-        return null;
-      }
-    }
-
-    async function hydratePostersInList(){
-      const imgs = Array.from(document.querySelectorAll("img.poster[data-title]"));
-      const queue = imgs.slice();
-      const concurrency = 4;
-      let active = 0;
-
-      return new Promise((resolve)=>{
-        const tick = async () => {
-          while(active < concurrency && queue.length){
-            const img = queue.shift();
-            active++;
-            const title = img.getAttribute("data-title");
-            const ph = img.previousElementSibling;
-
-            fetchPoster(title).then((url)=>{
-              if(url){
-                img.src = url;
-                img.onload = () => img.classList.add("loaded");
-                if(ph) ph.style.display = "none";
-              }
-            }).finally(()=>{
-              active--;
-              if(queue.length === 0 && active === 0) resolve();
-              else tick();
-            });
-          }
-        };
-        tick();
-      });
-    }
-
-    async function hydrateCalendarBackgrounds(){
-      if(!calPosterBgEl.checked) return;
-
-      const items = Array.from(document.querySelectorAll(".calItem[data-title]"));
-      const queue = items.slice();
-      const concurrency = 4;
-      let active = 0;
-
-      return new Promise((resolve)=>{
-        const tick = async () => {
-          while(active < concurrency && queue.length){
-            const el = queue.shift();
-            active++;
-
-            const title = el.getAttribute("data-title");
-            fetchPoster(title).then((url)=>{
-              if(url){
-                el.classList.add("hasPoster");
-                const bg = el.querySelector(".calBg");
-                if(bg) bg.style.backgroundImage = `url("${url}")`;
-              }
-            }).finally(()=>{
-              active--;
-              if(queue.length === 0 && active === 0) resolve();
-              else tick();
-            });
-          }
-        };
-        tick();
-      });
-    }
-
-    function posterHTML(title){
-      const safe = escapeAttr(title);
-      return `
-        <div class="posterWrap" data-open="${safe}">
-          <div class="posterPh">poster</div>
-          <img class="poster" data-title="${safe}" alt="Poster for ${safe}" />
-        </div>
-      `;
-    }
-
-    function mutedCardHTML(title){
-      return `
-        <div class="card mutedCard">
-          <div class="muteRow">
-            <h2 class="title">${escapeHtml(title)}</h2>
-            <div class="actions">
-              <div class="act" data-mute="${escapeAttr(title)}" title="unmute">+</div>
-              <div class="act hide" data-hide="${escapeAttr(title)}" title="hide">×</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    /* TIGHT LIST CARD: no planRow, no “next showing” line */
-    function cardHTML(movie, today){
-      const title = movie.title || "Untitled";
-
-      if(mutedSet.has(title)){
-        return mutedCardHTML(title);
-      }
-
-      const { beads, monthTags } = buildBeads(movie, today);
-
-      const monthRow = monthTags.length
-        ? `<div class="monthRow">${monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("")}${monthTags.length>2?`<span class="monthTag">+${monthTags.length-2}</span>`:""}</div>`
-        : "";
-
-      const beadsHTML = beads.map(b => {
-        if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
-        return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
-      }).join("");
-
-      return `
-        <div class="card" data-open="${escapeAttr(title)}">
-          <div class="cardRow">
-            ${posterHTML(title)}
-            <div class="content">
-              <div class="titleRow">
-                <h2 class="title" data-open="${escapeAttr(title)}" title="${escapeAttr(title)}">${escapeHtml(title)}</h2>
-                <div class="actions" onclick="event.stopPropagation()">
-                  <div class="act" data-mute="${escapeAttr(title)}" title="mute/unmute">−</div>
-                  <div class="act hide" data-hide="${escapeAttr(title)}" title="hide">×</div>
-                </div>
-              </div>
-
-              <div class="titleRow" style="margin-top:-2px; margin-bottom:10px;">
-                <div class="badges">${badgeHTML(movie, today)}</div>
-              </div>
-
-              ${monthRow}
-              <div class="beads">${beadsHTML}</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function attachHandlers(){
-      document.querySelectorAll("[data-hide]").forEach(el=>{
-        el.addEventListener("click", (ev)=>{
-          ev.stopPropagation();
-          hideTitle(el.getAttribute("data-hide"));
-        });
-      });
-      document.querySelectorAll("[data-mute]").forEach(el=>{
-        el.addEventListener("click", (ev)=>{
-          ev.stopPropagation();
-          toggleMute(el.getAttribute("data-mute"));
-        });
-      });
-
-      document.querySelectorAll("[data-open]").forEach(el=>{
-        el.addEventListener("click", (ev)=>{
-          const t = el.getAttribute("data-open");
-          if(!t) return;
-          if(ev.target && (ev.target.classList.contains("act") || ev.target.classList.contains("mini"))) return;
-          openDrawer(t);
-        });
-      });
-    }
-
-    /* ---------- modes ---------- */
-    let mode = localStorage.getItem(MODE_KEY) || "list";
-    function setMode(m){
-      mode = m;
-      localStorage.setItem(MODE_KEY, m);
-      document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
-      document.getElementById("modeList").classList.toggle("active", mode==="list");
-      render();
-    }
-    document.getElementById("modeCal").addEventListener("click", ()=>setMode("calendar"));
-    document.getElementById("modeList").addEventListener("click", ()=>setMode("list"));
-
-    /* ---------- sorting ---------- */
-    let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
-
-    function setSort(newSort){
-      state.sort = newSort;
-      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
-      render();
-    }
-    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
-
-    function sortList(list, today){
-      const arr = list.slice();
-
-      if(state.sort === "long"){
-        arr.sort((a,b) => (runCount(b) - runCount(a)) || (a.title||"").localeCompare(b.title||""));
-      } else if(state.sort === "short"){
-        arr.sort((a,b) => (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||""));
-      } else {
-        arr.sort((a,b) => {
-          const an = getNextShowing(a,today);
-          const bn = getNextShowing(b,today);
-          const ad = an ? daysBetween(today, an) : 9999;
-          const bd = bn ? daysBetween(today, bn) : 9999;
-
-          const aSoon = leavingSoon(a,today) ? 0 : 1;
-          const bSoon = leavingSoon(b,today) ? 0 : 1;
-
-          return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
-        });
-      }
-
-      if(mutedBottomEl.checked){
-        const unmuted = arr.filter(m => !mutedSet.has(m.title));
-        const muted = arr.filter(m => mutedSet.has(m.title));
-        return unmuted.concat(muted);
-      }
-      return arr;
-    }
-
-    /* ---------- Grouping ---------- */
-    function splitGroups(movies, today){
-      const now = [];
-      const next = [];
-      const later = [];
-
-      for(const m of movies){
-        const nx = getNextShowing(m, today);
-        if(!nx){ later.push(m); continue; }
-        const d = daysBetween(today, nx);
-        if(d <= 0) now.push(m);
-        else if(d <= 7) next.push(m);
-        else later.push(m);
-      }
-      return { now, next, later };
-    }
-
-    function sectionHTML(title, inner){
-      return `
-        <div style="margin: 10px 0 14px;">
-          <div style="font-weight:1000;opacity:.85;margin: 0 0 8px; letter-spacing:.3px;">${escapeHtml(title)}</div>
-          ${inner}
-        </div>
-      `;
-    }
-
-    /* ---------- Calendar ---------- */
-    function startOfWeek(d){
-      const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      const dow = nd.getDay();
-      nd.setDate(nd.getDate() - dow);
-      return nd;
-    }
-    function fmtHeaderRange(weekStart){
-      const end = new Date(weekStart);
-      end.setDate(end.getDate() + 6);
-      const a = weekStart.toLocaleString(undefined, { month:"short", day:"numeric" });
-      const b = end.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric" });
-      return `${a} – ${b}`;
-    }
-    function fmtDayLabel(d){
-      const dow = d.toLocaleString(undefined, { weekday:"short" }).toUpperCase();
-      const md = d.toLocaleString(undefined, { month:"short", day:"numeric" });
-      return { dow, md };
-    }
-
-    function calItemHTML(title, dotClass, isMuted){
-      const safeTitle = escapeHtml(title);
-      const attr = escapeAttr(title);
-      const mutedClass = isMuted ? " muted" : "";
-
-      return `
-        <div class="calItem${mutedClass}" data-title="${attr}" data-open="${attr}" title="${safeTitle}">
-          <div class="calBg"></div>
-          <div class="calShade"></div>
-
-          <div class="dot ${dotClass}"></div>
-          <div class="calName">${safeTitle}</div>
-          <div class="calActions" onclick="event.stopPropagation()">
-            <div class="actCal" data-mute="${attr}" title="mute/unmute">−</div>
-            <div class="actCal hide" data-hide="${attr}" title="hide">×</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderCalendar(movies, today){
-      let weekStart = startOfWeek(today);
-
-      const controls = `
-        <div class="calTop">
-          <h2 class="calTitle">${escapeHtml(fmtHeaderRange(weekStart))}</h2>
-          <div class="calNav">
-            <button class="iconBtn" id="wkPrev" title="previous week">◀</button>
-            <button class="todayBtn" id="wkToday">Today</button>
-            <button class="iconBtn" id="wkNext" title="next week">▶</button>
-          </div>
-        </div>
-      `;
-
-      const dayMap = new Map();
-      for(let i=0;i<7;i++){
-        const d = new Date(weekStart);
-        d.setDate(d.getDate()+i);
-        const key = d.toISOString().slice(0,10);
-        dayMap.set(key, []);
-      }
-
-      for(const m of movies){
-        if(!moviePassesFilters(m, today)) continue;
-
-        const dates = sortedDateObjs(m);
-        const muted = mutedSet.has(m.title);
-
-        for(const dt of dates){
-          const key = dt.toISOString().slice(0,10);
-          if(dayMap.has(key)){
-            const dotClass = leavingSoon(m, today) ? "soon" : (isShort(m) ? "short" : "");
-            dayMap.get(key).push({ title: m.title, dotClass, muted });
-          }
-        }
-      }
-
-      for(const [k, arr] of dayMap.entries()){
-        arr.sort((a,b)=> a.title.localeCompare(b.title));
-        if(mutedBottomEl.checked){
-          const un = arr.filter(x => !x.muted);
-          const mu = arr.filter(x => x.muted);
-          dayMap.set(k, un.concat(mu));
-        }
-      }
-
-      let cols = "";
-      for(let i=0;i<7;i++){
-        const d = new Date(weekStart);
-        d.setDate(d.getDate()+i);
-        const key = d.toISOString().slice(0,10);
-        const { dow, md } = fmtDayLabel(d);
-
-        const items = dayMap.get(key);
-        const maxShow = 12;
-        const shown = items.slice(0, maxShow);
-        const hidden = items.length - shown.length;
-
-        const list = shown.length
-          ? shown.map(x => calItemHTML(x.title, x.dotClass, x.muted)).join("")
-          : `<div style="opacity:.55;font-size:12px;padding:6px 2px;">nothing</div>`;
-
-        const more = hidden > 0 ? `<div class="moreLink" data-more="${key}">+${hidden} more</div>` : "";
-
-        cols += `
-          <div class="dayCol">
-            <div class="dayHead">
-              <div class="dayDow">${dow}</div>
-              <div class="dayDate">${md}</div>
-            </div>
-            <div class="dayBody" data-day="${key}">
-              ${list}
-              ${more}
-            </div>
-          </div>
-        `;
-      }
-
-      out.innerHTML = controls + `<div class="calGrid">${cols}</div>`;
-      attachHandlers();
-
-      let wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
-      function setWeekOffset(newOffset){
-        wkOffset = newOffset;
-        localStorage.setItem(WEEK_KEY, String(wkOffset));
-        const t = getToday();
-        t.setDate(t.getDate() + (wkOffset * 7));
-        renderCalendar(state.movies, t);
-        hydrateCalendarBackgrounds();
-      }
-
-      document.getElementById("wkPrev").addEventListener("click", ()=>setWeekOffset(wkOffset - 1));
-      document.getElementById("wkNext").addEventListener("click", ()=>setWeekOffset(wkOffset + 1));
-      document.getElementById("wkToday").addEventListener("click", ()=>{
-        localStorage.setItem(WEEK_KEY, "0");
-        renderCalendar(state.movies, getToday());
-        hydrateCalendarBackgrounds();
-      });
-
-      document.querySelectorAll("[data-more]").forEach(el=>{
-        el.addEventListener("click", ()=>{
-          const dayKey = el.getAttribute("data-more");
-          const body = document.querySelector(`.dayBody[data-day="${dayKey}"]`);
-          const all = dayMap.get(dayKey);
-          body.innerHTML = all.map(x => calItemHTML(x.title, x.dotClass, x.muted)).join("");
-          attachHandlers();
-          hydrateCalendarBackgrounds();
-        });
-      });
-
-      hydrateCalendarBackgrounds();
-    }
-
-    /* ---------- List render ---------- */
-    function renderList(today){
-      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
-      const sorted = sortList(filtered, today);
-
-      if(sorted.length === 0){
-        out.innerHTML = `<div class="error">Nothing to show.</div>`;
+  }
+
+  // Fetch data
+  async function load(){
+    const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
+    daysEl.value = String(days);
+    localStorage.setItem(LS.days, String(days));
+
+    meta.textContent = "Loading…";
+
+    try{
+      const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
+      const data = await res.json();
+
+      if (!res.ok || data.error){
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${esc("Error: " + (data.error || res.statusText) + "\n\nDebug:\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
         return;
       }
 
-      if(groupedEl.checked){
-        const g = splitGroups(sorted, today);
-        out.innerHTML =
-          sectionHTML("Now", `<div class="grid">${g.now.map(m => cardHTML(m, today)).join("")}</div>`) +
-          sectionHTML("Next 7 days", `<div class="grid">${g.next.map(m => cardHTML(m, today)).join("")}</div>`) +
-          sectionHTML("Later", `<div class="grid">${g.later.map(m => cardHTML(m, today)).join("")}</div>`);
-      } else {
-        out.innerHTML = `<div class="grid">${sorted.map(m => cardHTML(m, today)).join("")}</div>`;
-      }
+      // Convert "range summary" to explicit show dates if server didn't provide
+      // We will prefer data.movies[*].show_dates if present. Otherwise build from first->last inclusive (but your scraper doesn't support gaps).
+      // Good news: your server likely already provides show_dates now. If not, we still show range beads, but it will include gaps.
+      const today = startOfDay(new Date());
 
-      attachHandlers();
-      hydratePostersInList();
-    }
+      state.generated_at = data.generated_at || "";
+      state.source = data.source || "";
+      state.days_ahead = data.days_ahead || days;
 
-    /* ---------- Detail Drawer ---------- */
-    let drawerTitleValue = null;
+      state.movies = (data.movies || []).map(m => {
+        const title = m.title || "Untitled";
+        const n = normTitle(title);
 
-    async function openDrawer(title){
-      drawerTitleValue = title;
-      drawerTitle.textContent = title;
+        // poster fields - accept a few names
+        const poster = m.poster_url || m.poster || m.poster_path || m.tmdb_poster_url || null;
 
-      drawerMuteBtn.textContent = mutedSet.has(title) ? "Unmute" : "Mute";
-      drawerHideBtn.textContent = "Hide";
+        // show_dates: prefer explicit list
+        let showDates = Array.isArray(m.show_dates) ? m.show_dates.slice() : null;
 
-      const movie = state.movies.find(m => m.title === title);
-      const today = getToday();
-      if(movie){
-        drawerBadges.innerHTML = badgeHTML(movie, today);
-
-        const next = getNextShowing(movie, today);
-        const last = getLastShowing(movie);
-        if(next && last){
-          const nextLabel = formatNextLabel(next, today);
-          const endsIn = daysBetween(today, last);
-          let endText = "";
-          if(endsIn === 0) endText = "ends today";
-          else if(endsIn === 1) endText = "ends tomorrow";
-          else if(endsIn > 1) endText = `ends in ${endsIn} days`;
-          else endText = "ended";
-          drawerPlan.textContent = `Next showing: ${nextLabel} · ${endText}`;
-        } else {
-          drawerPlan.textContent = "";
+        // fallback: if only first_date/last_date exist, generate inclusive days (may include gaps)
+        if (!showDates && m.first_date && m.last_date){
+          const a = isoToDate(m.first_date);
+          const b = isoToDate(m.last_date);
+          const list = [];
+          let cur = startOfDay(a);
+          const end = startOfDay(b);
+          while (cur <= end){
+            list.push(cur.toISOString().slice(0,10));
+            cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate()+1);
+          }
+          showDates = list;
         }
 
-        const { beads, monthTags } = buildBeads(movie, today);
-        drawerMonth.innerHTML = monthTags.length ? monthTags.map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("") : "";
+        // If still none, at least show first/last if present
+        if (!showDates) showDates = [];
 
-        drawerBeads.innerHTML = beads.map(b => {
-          if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
-          return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
-        }).join("");
-      } else {
-        drawerBadges.innerHTML = "";
-        drawerPlan.textContent = "";
-        drawerMonth.innerHTML = "";
-        drawerBeads.innerHTML = "";
-      }
+        // compute next showing + ends in
+        const showDateObjs = showDates.map(isoToDate).sort((x,y)=>x-y);
+        const next = showDateObjs.find(d => d >= today) || null;
+        const last = showDateObjs.length ? showDateObjs[showDateObjs.length-1] : null;
 
-      drawerBackdrop.classList.add("open");
+        const endsIn = last ? Math.round((startOfDay(last) - today)/86400000) : null;
+        const leavingSoon = endsIn !== null && endsIn >= 0 && endsIn <= 2;
+        const runLen = m.run_length_days ?? showDates.length ?? 0;
+        const shortRun = runLen <= 3;
 
-      drawerPosterImg.src = "";
-      const url = await fetchPoster(title);
-      if(url) drawerPosterImg.src = url;
-    }
+        // "plan score" for sorting
+        const daysUntil = next ? Math.round((startOfDay(next) - today)/86400000) : 9999;
+        const planScore =
+          (leavingSoon ? 3 : 0) +
+          (shortRun ? 2 : 0) +
+          (daysUntil === 0 ? 2 : daysUntil === 1 ? 1 : 0) +
+          (poster ? 1 : 0);
 
-    function closeDrawer(){
-      drawerBackdrop.classList.remove("open");
-      drawerTitleValue = null;
-    }
+        return {
+          ...m,
+          title,
+          norm: n,
+          poster,
+          show_dates: showDates,
+          _next: next,
+          _last: last,
+          _endsIn: endsIn,
+          _leavingSoon: leavingSoon,
+          _shortRun: shortRun,
+          _runLen: runLen,
+          _daysUntil: daysUntil,
+          _planScore: planScore
+        };
+      });
 
-    drawerCloseBtn.addEventListener("click", closeDrawer);
-    drawerBackdrop.addEventListener("click", (e)=>{
-      if(e.target === drawerBackdrop) closeDrawer();
-    });
-    document.addEventListener("keydown", (e)=>{
-      if(e.key === "Escape") closeDrawer();
-    });
-
-    drawerMuteBtn.addEventListener("click", ()=>{
-      if(!drawerTitleValue) return;
-      toggleMute(drawerTitleValue);
-    });
-    drawerHideBtn.addEventListener("click", ()=>{
-      if(!drawerTitleValue) return;
-      hideTitle(drawerTitleValue);
-    });
-
-    /* ---------- Main render ---------- */
-    function render(){
-      const today = getToday();
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
+      render();
+    } catch (e){
+      meta.textContent = "";
+      out.innerHTML = `<div class="error">${esc("Request failed: " + e)}</div>`;
+    }
+  }
 
-      if(mgrEl.classList.contains("open")) renderMgr();
+  // Filters + sorting
+  function filteredMovies(){
+    const q = (searchEl.value || "").trim().toLowerCase();
+    localStorage.setItem(LS.search, searchEl.value || "");
 
-      document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
-      document.getElementById("modeList").classList.toggle("active", mode==="list");
+    const onlyLeaving = onlyLeavingEl.checked;
 
-      if(mode === "calendar"){
-        const wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
-        const t = getToday();
-        t.setDate(t.getDate() + (wkOffset * 7));
-        renderCalendar(state.movies, t);
+    let movies = state.movies.slice();
+
+    // remove hidden
+    movies = movies.filter(m => !state.hidden.has(m.norm));
+
+    // search
+    if (q){
+      movies = movies.filter(m => (m.title || "").toLowerCase().includes(q));
+    }
+
+    // leaving soon filter
+    if (onlyLeaving){
+      movies = movies.filter(m => m._leavingSoon);
+    }
+
+    // muted to bottom
+    if (mutedBottomEl.checked){
+      const a = [];
+      const b = [];
+      for (const m of movies){
+        (state.muted.has(m.norm) ? b : a).push(m);
+      }
+      movies = a.concat(b);
+    }
+
+    // sort
+    if (state.sort === "plan"){
+      movies.sort((x,y) => {
+        // higher planScore first, then ends sooner, then title
+        const ps = (y._planScore - x._planScore);
+        if (ps) return ps;
+        const ei = (x._endsIn ?? 9999) - (y._endsIn ?? 9999);
+        if (ei) return ei;
+        return (x.title || "").localeCompare(y.title || "");
+      });
+    } else if (state.sort === "long"){
+      movies.sort((x,y) => (y._runLen - x._runLen) || (x._daysUntil - y._daysUntil) || (x.title||"").localeCompare(y.title||""));
+    } else if (state.sort === "short"){
+      movies.sort((x,y) => (x._runLen - y._runLen) || (x._daysUntil - y._daysUntil) || (x.title||"").localeCompare(y.title||""));
+    }
+
+    return movies;
+  }
+
+  // Grouping: Now, Next 7, Later, Muted (optional)
+  function groupMovies(movies){
+    const today = startOfDay(new Date());
+    const in7 = new Date(today.getFullYear(), today.getMonth(), today.getDate()+7);
+
+    const groups = { now: [], next7: [], later: [], muted: [] };
+
+    for (const m of movies){
+      const isMuted = state.muted.has(m.norm);
+
+      // determine if showing today or within next 7 days
+      const next = m._next ? startOfDay(m._next) : null;
+
+      let bucket = "later";
+      if (!next) bucket = "later";
+      else if (next <= today) bucket = "now";
+      else if (next <= in7) bucket = "next7";
+      else bucket = "later";
+
+      if (isMuted && mutedBottomEl.checked){
+        groups.muted.push(m);
       } else {
-        renderList(today);
+        groups[bucket].push(m);
       }
     }
+    return groups;
+  }
 
-    async function load(){
-      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
-      daysEl.value = String(days);
+  // Render list cards
+  function listCard(m){
+    const isMuted = state.muted.has(m.norm);
+    const leavingSoon = m._leavingSoon;
+    const shortRun = m._shortRun;
 
-      out.innerHTML = "";
-      meta.textContent = "Loading…";
+    const poster = m.poster ? `<img src="${esc(m.poster)}" alt="${esc(m.title)} poster" loading="lazy" />` : `<div class="ph">no poster</div>`;
 
-      try{
-        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
-        const data = await res.json();
+    // beads: show only actual show_dates (no gaps) if provided
+    const dates = (m.show_dates || []).map(isoToDate).sort((a,b)=>a-b);
+    const today = new Date();
+    const monthLabel = dates.length ? dates[0].toLocaleString(undefined,{month:"short"}) : "";
 
-        if(!res.ok || data.error){
-          meta.textContent = "";
-          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\\n\\nDebug:\\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
-          return;
-        }
+    const beadsHtml = dates.map(d => {
+      const on = true;
+      const isToday = sameDay(d, today);
+      return `<div class="bead ${on ? "on" : ""} ${isToday ? "today" : ""}" title="${esc(fmtDowMonthDay(d))}">${d.getDate()}</div>`;
+    }).join("");
 
-        state.movies = data.movies || [];
-        state.generated_at = data.generated_at;
-        state.source = data.source;
-        state.days_ahead = data.days_ahead;
+    // poster background (optional)
+    const bgOn = posterBgToggleEl.checked && m.poster;
+    const bg = bgOn ? `<div class="posterBg" style="background-image:url('${esc(m.poster)}')"></div>` : "";
 
+    return `
+      <div class="card ${isMuted ? "mutedCard" : ""}" data-open="${esc(m.norm)}">
+        ${bg}
+        <div class="cardInner">
+          <div class="poster" aria-hidden="true">${poster}</div>
+
+          <div>
+            <div class="title">${esc(m.title)}</div>
+            <div class="badges">
+              ${leavingSoon ? `<span class="pill red">LEAVING SOON</span>` : ``}
+              ${shortRun ? `<span class="pill gold">SHORT RUN</span>` : ``}
+              <span class="pill">${m._runLen} day${m._runLen===1?"":"s"}</span>
+            </div>
+
+            ${isMuted ? `` : `
+              <div class="beadsRow">
+                ${monthLabel ? `<span class="monthChip">${esc(monthLabel)}</span>` : ``}
+                <div class="beads">${beadsHtml || `<span style="color:rgba(167,167,194,.7);font-size:12px;">no dates found</span>`}</div>
+              </div>
+            `}
+          </div>
+
+          <div class="actions" aria-label="actions">
+            <button class="iconBtn ${isMuted ? "dim" : ""}" title="${isMuted ? "Unmute" : "Mute"}" data-mute="${esc(m.norm)}">−</button>
+            <button class="iconBtn" title="Hide" data-hide="${esc(m.norm)}">×</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderList(){
+    const movies = filteredMovies();
+
+    if (!movies.length){
+      out.innerHTML = `<div class="error">No movies found (filters/search might be hiding them, or the scrape returned nothing).</div>`;
+      return;
+    }
+
+    const grouped = groupedEl.checked;
+
+    if (!grouped){
+      out.innerHTML = `<div class="grid">${movies.map(listCard).join("")}</div>`;
+      wireCardButtons();
+      return;
+    }
+
+    const g = groupMovies(movies);
+
+    const parts = [];
+    if (g.now.length){
+      parts.push(`<h2>Now</h2><div class="grid">${g.now.map(listCard).join("")}</div>`);
+    }
+    if (g.next7.length){
+      parts.push(`<h2>Next 7 days</h2><div class="grid">${g.next7.map(listCard).join("")}</div>`);
+    }
+    if (g.later.length){
+      parts.push(`<h2>Later</h2><div class="grid">${g.later.map(listCard).join("")}</div>`);
+    }
+    if (g.muted.length){
+      parts.push(`<h2>Muted</h2><div class="grid">${g.muted.map(listCard).join("")}</div>`);
+    }
+
+    out.innerHTML = parts.join("");
+    wireCardButtons();
+  }
+
+  function wireCardButtons(){
+    // open drawer on card tap (but ignore button taps)
+    out.querySelectorAll("[data-open]").forEach(card => {
+      card.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && (t.closest("[data-mute]") || t.closest("[data-hide]"))) return;
+        const n = card.getAttribute("data-open");
+        const m = state.movies.find(x => x.norm === n);
+        if (m) openDrawer(m);
+      });
+    });
+
+    out.querySelectorAll("[data-mute]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const n = btn.getAttribute("data-mute");
+        toggleMuted(n);
         render();
-      }catch(e){
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+      });
+    });
+    out.querySelectorAll("[data-hide]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const n = btn.getAttribute("data-hide");
+        toggleHidden(n);
+        render();
+      });
+    });
+  }
+
+  // ===== Calendar rendering =====
+  function getCalendarItemsByDate(movies){
+    // map dateIso -> list of movies
+    const map = new Map();
+    for (const m of movies){
+      const isMuted = state.muted.has(m.norm);
+      for (const iso of (m.show_dates || [])){
+        if (!map.has(iso)) map.set(iso, []);
+        map.get(iso).push({ movie: m, muted: isMuted });
       }
     }
+    // sort each day's list: non-muted first (if option), then plan score
+    for (const [iso, arr] of map.entries()){
+      arr.sort((a,b) => {
+        if (mutedBottomEl.checked && a.muted !== b.muted) return a.muted ? 1 : -1;
+        const ps = (b.movie._planScore - a.movie._planScore);
+        if (ps) return ps;
+        return (a.movie.title||"").localeCompare(b.movie.title||"");
+      });
+    }
+    return map;
+  }
 
-    async function debugFetch(){
-      out.innerHTML = "";
-      meta.textContent = "Running debug…";
-      try{
-        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
-        const data = await res.json();
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
-      }catch(e){
-        meta.textContent = "";
-        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
-      }
+  function setCalAnchor(d){
+    state.calAnchor = d.toISOString().slice(0,10);
+    saveJSON(LS.calAnchor, state.calAnchor);
+  }
+  function getCalAnchor(){
+    if (state.calAnchor){
+      const d = isoToDate(state.calAnchor);
+      if (!isNaN(d)) return startOfDay(d);
+    }
+    return startOfDay(new Date());
+  }
+
+  function renderDesktopCalendar(){
+    const movies = filteredMovies();
+    const map = getCalendarItemsByDate(movies);
+
+    // anchor week (Sunday start)
+    const anchor = getCalAnchor();
+    const day = anchor.getDay(); // 0 Sun
+    const weekStart = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - day);
+    const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()+6);
+
+    calRange.textContent = fmtRange(weekStart, weekEnd);
+
+    // build 7 days
+    const days = [];
+    for (let i=0;i<7;i++){
+      const d = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()+i);
+      const iso = d.toISOString().slice(0,10);
+      const items = map.get(iso) || [];
+
+      const headDow = d.toLocaleString(undefined,{weekday:"short"}).toUpperCase();
+      const headMo = d.toLocaleString(undefined,{month:"short"});
+      const headDay = d.getDate();
+
+      const itemsHtml = items.slice(0, 10).map(({movie, muted}) => {
+        const leavingSoon = movie._leavingSoon;
+        const shortRun = movie._shortRun;
+
+        const dotColor = leavingSoon ? "rgba(255,107,122,.8)" : shortRun ? "rgba(255,204,102,.8)" : "rgba(126,199,255,.65)";
+        const bgOn = posterBgToggleEl.checked && movie.poster;
+        const bgStyle = bgOn ? `style="background-image:url('${esc(movie.poster)}')"` : "";
+        const bgClass = bgOn ? "bg" : "";
+
+        return `
+          <div class="calItem ${muted ? "muted" : ""} ${bgClass}" ${bgStyle} title="${esc(movie.title)}" data-open="${esc(movie.norm)}">
+            <div class="dot" style="background:${dotColor}; border-color:${dotColor};"></div>
+            <div class="name">${esc(movie.title)}</div>
+            <div class="mini">
+              <div class="miniBtn" data-mute="${esc(movie.norm)}" title="${muted ? "Unmute" : "Mute"}">−</div>
+              <div class="miniBtn" data-hide="${esc(movie.norm)}" title="Hide">×</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      const more = items.length > 10 ? `<div style="margin-top:6px;color:rgba(167,167,194,.75);font-size:12px;">+${items.length-10} more</div>` : "";
+
+      days.push(`
+        <div class="calDay">
+          <div class="calDayHead">
+            <strong>${headDow}</strong>
+            <span>${headMo} ${headDay}</span>
+          </div>
+          <div class="calItems">
+            ${itemsHtml || `<div style="color:rgba(167,167,194,.65);font-size:12px;">nothing</div>`}
+            ${more}
+          </div>
+        </div>
+      `);
     }
 
-    document.getElementById("refresh").addEventListener("click", load);
-    document.getElementById("debug").addEventListener("click", debugFetch);
+    calGrid.innerHTML = days.join("");
 
-    onlySoonEl.addEventListener("change", render);
-    groupedEl.addEventListener("change", render);
-    mutedBottomEl.addEventListener("change", render);
-    calPosterBgEl.addEventListener("change", render);
-    qEl.addEventListener("input", render);
+    // wire calendar controls
+    calGrid.querySelectorAll("[data-open]").forEach(el => {
+      el.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && (t.closest("[data-mute]") || t.closest("[data-hide]"))) return;
+        const n = el.getAttribute("data-open");
+        const m = state.movies.find(x => x.norm === n);
+        if (m) openDrawer(m);
+      });
+    });
+    calGrid.querySelectorAll("[data-mute]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMuted(btn.getAttribute("data-mute"));
+        render();
+      });
+    });
+    calGrid.querySelectorAll("[data-hide]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleHidden(btn.getAttribute("data-hide"));
+        render();
+      });
+    });
+  }
 
-    document.getElementById("manageBtn").addEventListener("click", openMgr);
-    document.getElementById("closeMgr").addEventListener("click", closeMgr);
-
-    function initSortButtons(){
-      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === state.sort));
+  function setMobileAnchor(d){
+    state.mAnchor = d.toISOString().slice(0,10);
+    saveJSON(LS.mAnchor, state.mAnchor);
+  }
+  function getMobileAnchor(){
+    if (state.mAnchor){
+      const d = isoToDate(state.mAnchor);
+      if (!isNaN(d)) return startOfDay(d);
     }
-    initSortButtons();
+    return startOfDay(new Date());
+  }
 
-    document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
-    document.getElementById("modeList").classList.toggle("active", mode==="list");
+  function renderMobileDayCalendar(){
+    const movies = filteredMovies();
+    const map = getCalendarItemsByDate(movies);
 
-    // start
-    load();
-  </script>
+    const anchor = getMobileAnchor();
+    const iso = anchor.toISOString().slice(0,10);
+    const items = map.get(iso) || [];
+
+    mTitle.textContent = fmtDowMonthDay(anchor);
+
+    if (!items.length){
+      mList.innerHTML = `<div class="mEmpty">Nothing listed this day. Swipe to another day or hit Today.</div>`;
+      return;
+    }
+
+    const html = items.map(({movie, muted}) => {
+      const leavingSoon = movie._leavingSoon;
+      const shortRun = movie._shortRun;
+
+      const dotColor = leavingSoon ? "rgba(255,107,122,.8)" : shortRun ? "rgba(255,204,102,.8)" : "rgba(126,199,255,.65)";
+      const bgOn = posterBgToggleEl.checked && movie.poster;
+      const bgStyle = bgOn ? `style="background-image:url('${esc(movie.poster)}')"` : "";
+      const bgClass = bgOn ? "bg" : "";
+
+      const poster = movie.poster ? `<img src="${esc(movie.poster)}" alt="" loading="lazy"/>` : "";
+
+      return `
+        <div class="mItem ${bgClass} ${muted ? "muted" : ""}" ${bgStyle} data-open="${esc(movie.norm)}">
+          <div class="mPoster">${poster}</div>
+          <div>
+            <div class="mName">${esc(movie.title)}</div>
+            <div class="mMeta">
+              <span class="mDot" style="background:${dotColor}; border-color:${dotColor};"></span>
+              ${leavingSoon ? `<span class="mTag red">Leaving soon</span>` : ``}
+              ${shortRun ? `<span class="mTag gold">Short run</span>` : ``}
+              <span class="mTag">${movie._runLen} day${movie._runLen===1?"":"s"}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    mList.innerHTML = html;
+
+    // tap opens drawer (mute/hide inside drawer on mobile, keeps this clean)
+    mList.querySelectorAll("[data-open]").forEach(el => {
+      el.addEventListener("click", () => {
+        const n = el.getAttribute("data-open");
+        const m = state.movies.find(x => x.norm === n);
+        if (m) openDrawer(m);
+      });
+    });
+  }
+
+  function renderCalendar(){
+    renderDesktopCalendar();
+    renderMobileDayCalendar();
+  }
+
+  // Render master
+  function render(){
+    persistChecks();
+
+    // Show correct view containers
+    if (state.view === "list"){
+      out.style.display = "block";
+      calWrap.style.display = "none";
+      mcal.style.display = "none";
+      renderList();
+    } else {
+      out.style.display = "none";
+      calWrap.style.display = "block";
+      mcal.style.display = "block";
+      renderCalendar();
+    }
+  }
+
+  // Debug
+  async function debugFetch(){
+    meta.textContent = "Running debug…";
+    out.innerHTML = "";
+    try{
+      const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
+      const data = await res.json();
+      meta.textContent = "";
+      out.style.display = "block";
+      calWrap.style.display = "none";
+      mcal.style.display = "none";
+      out.innerHTML = `<div class="error">${esc(JSON.stringify(data, null, 2))}</div>`;
+    } catch(e){
+      meta.textContent = "";
+      out.innerHTML = `<div class="error">${esc("Debug failed: " + e)}</div>`;
+    }
+  }
+
+  // Events
+  document.getElementById("go").addEventListener("click", load);
+  document.getElementById("debug").addEventListener("click", debugFetch);
+
+  searchEl.addEventListener("input", () => render());
+  groupedEl.addEventListener("change", () => { persistChecks(); render(); });
+  onlyLeavingEl.addEventListener("change", () => { persistChecks(); render(); });
+  mutedBottomEl.addEventListener("change", () => { persistChecks(); render(); });
+  posterBgToggleEl.addEventListener("change", () => { persistChecks(); render(); });
+
+  document.getElementById("manage").addEventListener("click", openManage);
+
+  viewListBtn.addEventListener("click", () => setView("list"));
+  viewCalBtn.addEventListener("click", () => setView("cal"));
+
+  sortPlanBtn.addEventListener("click", () => setSort("plan"));
+  sortLongBtn.addEventListener("click", () => setSort("long"));
+  sortShortBtn.addEventListener("click", () => setSort("short"));
+
+  // Calendar nav (desktop week)
+  calPrev.addEventListener("click", () => {
+    const a = getCalAnchor();
+    const prev = new Date(a.getFullYear(), a.getMonth(), a.getDate()-7);
+    setCalAnchor(prev);
+    render();
+  });
+  calNext.addEventListener("click", () => {
+    const a = getCalAnchor();
+    const next = new Date(a.getFullYear(), a.getMonth(), a.getDate()+7);
+    setCalAnchor(next);
+    render();
+  });
+  calToday.addEventListener("click", () => {
+    const t = startOfDay(new Date());
+    setCalAnchor(t);
+    render();
+  });
+
+  // Mobile day nav
+  mPrev.addEventListener("click", () => {
+    const a = getMobileAnchor();
+    const prev = new Date(a.getFullYear(), a.getMonth(), a.getDate()-1);
+    setMobileAnchor(prev);
+    render();
+  });
+  mNext.addEventListener("click", () => {
+    const a = getMobileAnchor();
+    const next = new Date(a.getFullYear(), a.getMonth(), a.getDate()+1);
+    setMobileAnchor(next);
+    render();
+  });
+  mToday.addEventListener("click", () => {
+    setMobileAnchor(startOfDay(new Date()));
+    render();
+  });
+
+  // Swipe on mobile calendar
+  let touchStartX = null;
+  let touchStartY = null;
+  mcal.addEventListener("touchstart", (e) => {
+    if (!e.touches || !e.touches.length) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, {passive:true});
+
+  mcal.addEventListener("touchend", (e) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    // horizontal swipe threshold
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4){
+      const a = getMobileAnchor();
+      const next = new Date(a.getFullYear(), a.getMonth(), a.getDate() + (dx < 0 ? 1 : -1));
+      setMobileAnchor(next);
+      render();
+    }
+    touchStartX = null;
+    touchStartY = null;
+  }, {passive:true});
+
+  // Initialize view/sort
+  setSort(state.sort);
+  setView(state.view);
+
+  // Load data
+  load();
+})();
+</script>
 </body>
 </html>
