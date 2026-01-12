@@ -2,5 +2,6 @@ Flask
 requests
 beautifulsoup4
 cloudscraper
-# Brotli helps cloudscraper handle compressed responses from Cloudflare
 Brotli
+gunicorn
+
