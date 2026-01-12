@@ -24,52 +24,50 @@
       --warnBg:#2a0f16;
       --warnBorder:#5a1b2a;
       --warnText:#ffd6de;
-
-      --shortBg:#1a1a12;
-      --shortBorder:#4b4420;
-      --shortText:#fff1b8;
-
-      --eventBg:#0f1a16;
-      --eventBorder:#1f4b3b;
-      --eventText:#bfffe7;
-
-      --oneBg:#101a2b;
-      --oneBorder:#274a7a;
-      --oneText:#cfe6ff;
-
-      --todayBg:#1d2a3a;
-      --todayBorder:#6bb8ff;
-
-      --sectionBg: rgba(20,20,33,.7);
     }
 
     *{ box-sizing:border-box; }
     body{
       margin:0;
-      padding:20px;
+      padding:18px;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       background:var(--bg);
       color:var(--text);
     }
-
-    /* FULL WIDTH */
     .wrap{ width:100%; max-width:none; margin:0; }
 
     h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
-    .sub{ opacity:.8; margin-bottom:18px; max-width: 110ch; }
+    .sub{ opacity:.8; margin-bottom:14px; max-width: 110ch; }
 
-    .controls{
+    /* --- Top layout: Views separate from Filters --- */
+    .topRow{
+      display:flex;
+      gap:12px;
+      align-items:stretch;
+      flex-wrap:wrap;
+      margin: 12px 0 10px;
+    }
+
+    .bar{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow: var(--shadow);
+      padding:12px;
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      margin:16px 0 10px;
-      padding:14px;
-      background:var(--panel2);
-      border:1px solid var(--border);
-      border-radius:12px;
-      box-shadow: var(--shadow);
-      width: 100%;
+      min-height: 54px;
+    }
+
+    .bar.views{
+      flex: 0 0 auto;
+    }
+    .bar.controls{
+      flex: 1 1 auto;
+      min-width: 320px;
+      justify-content:flex-start;
     }
 
     label{ opacity:.85; font-size:13px; }
@@ -85,7 +83,7 @@
 
     .search{
       width: 240px;
-      max-width: 48vw;
+      max-width: 45vw;
       padding:8px 10px;
       border-radius:10px;
       border:1px solid var(--beadBorder);
@@ -111,8 +109,10 @@
       border-color: rgba(154,209,255,.6);
       background: rgba(154,209,255,.10);
     }
-    .btn.sort{ background:#161625; }
-    .btn.sort.active{
+    .btn.pill{
+      background:#161625;
+    }
+    .btn.pill.active{
       border-color: rgba(154,209,255,.7);
       background: rgba(154,209,255,.14);
     }
@@ -131,6 +131,8 @@
       white-space:nowrap;
     }
     .toggle input{ accent-color: var(--accent); }
+
+    .spacer{ flex:1; }
 
     .meta{
       font-size:13px;
@@ -153,14 +155,13 @@
     .mgr{
       border: 1px solid rgba(35,35,58,.7);
       background: rgba(16,16,26,.75);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 10px 12px;
       box-shadow: var(--shadow);
-      margin-bottom: 14px;
+      margin: 10px 0 14px;
       display:none;
     }
     .mgr.open{ display:block; }
-
     .mgrHead{
       display:flex;
       justify-content:space-between;
@@ -168,7 +169,14 @@
       gap:10px;
       margin-bottom: 8px;
     }
-    .mgrTitle{ font-weight: 900; font-size: 13px; letter-spacing: .3px; text-transform: uppercase; opacity:.9; margin:0; }
+    .mgrTitle{
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      opacity:.9;
+      margin:0;
+    }
     .mgrGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -250,14 +258,18 @@
       margin-top: 10px;
     }
 
-    /* ---------- LIST VIEW cards (with poster) ---------- */
+    /* ---------- LIST VIEW cards ---------- */
     .grid{
       display:grid;
       grid-template-columns: 1fr;
       gap:12px;
     }
-    @media (min-width: 900px){
+    @media (min-width: 980px){
       .grid{ grid-template-columns: 1fr 1fr; }
+    }
+    /* 3 columns on wide screens */
+    @media (min-width: 1400px){
+      .grid{ grid-template-columns: 1fr 1fr 1fr; }
     }
 
     .card{
@@ -269,7 +281,6 @@
       position:relative;
       overflow:hidden;
     }
-
     .cardRow{ display:flex; gap:12px; align-items:flex-start; }
 
     .posterWrap{
@@ -283,7 +294,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      flex: 0 0 auto;
+      cursor:pointer;
+      user-select:none;
     }
     .poster{
       width:100%;
@@ -322,7 +334,10 @@
       font-weight:900;
       line-height:1.12;
       margin:0;
+      cursor:pointer;
+      user-select:none;
     }
+
     .badges{
       display:flex;
       gap:8px;
@@ -386,14 +401,16 @@
       color: var(--text);
     }
 
-    .monthRow{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; min-height: 18px; }
+    /* FIX: Month label spacing */
+    .monthRow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-height: 18px; margin-bottom: 6px; }
     .monthTag{
       font-size:12px;
       color: var(--muted2);
       border:1px solid rgba(43,43,73,.65);
       background: rgba(15,15,25,.55);
-      padding:2px 8px;
+      padding:3px 9px;
       border-radius:999px;
+      line-height: 1.2;
     }
 
     .beads{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
@@ -409,8 +426,8 @@
     }
     .bead.dim{ opacity:.35; background: rgba(15,15,25,.6); }
     .bead.today{
-      background: var(--todayBg);
-      border-color: var(--todayBorder);
+      background: rgba(29,42,58,.95);
+      border-color: rgba(107,184,255,.85);
       box-shadow: 0 0 0 2px rgba(107,184,255,.12);
     }
     .gapDots{
@@ -437,8 +454,7 @@
       justify-content:space-between;
       gap:10px;
     }
-    .mutedCard .title{ font-size: 14px; }
-    .mutedCard .muteActions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .mutedCard .title{ font-size: 14px; cursor: default; }
 
     /* ---------- CALENDAR MODE ---------- */
     .calTop{
@@ -490,7 +506,7 @@
 
     .calGrid{
       display:grid;
-      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      grid-template-columns: repeat(7, minmax(170px, 1fr));
       gap: 12px;
       width: 100%;
       overflow-x: auto;
@@ -528,7 +544,6 @@
       opacity: .9;
     }
 
-    /* Calendar item with optional poster background */
     .calItem{
       position: relative;
       display:flex;
@@ -541,26 +556,24 @@
       margin-bottom: 8px;
       min-width: 0;
       overflow:hidden;
+      cursor:pointer;
+      user-select:none;
     }
-
-    .calItem.hasPoster{
-      background: #0f0f19;
-    }
+    .calItem.hasPoster{ background: #0f0f19; }
     .calBg{
       position:absolute;
       inset:0;
       background-size: cover;
       background-position: center;
-      filter: saturate(1.05) contrast(1.05);
       transform: scale(1.04);
-      opacity: .55;
+      opacity: .58;
+      filter: saturate(1.05) contrast(1.06);
     }
     .calShade{
       position:absolute;
       inset:0;
       background: linear-gradient(90deg, rgba(11,11,15,.92), rgba(11,11,15,.68) 55%, rgba(11,11,15,.92));
     }
-
     .dot{
       width: 10px; height: 10px;
       border-radius: 999px;
@@ -572,7 +585,6 @@
     }
     .dot.soon{ background: rgba(255,120,150,.95); box-shadow: 0 0 0 3px rgba(255,120,150,.12); }
     .dot.short{ background: rgba(255,220,120,.95); box-shadow: 0 0 0 3px rgba(255,220,120,.10); }
-
     .calName{
       flex: 1 1 auto;
       min-width: 0;
@@ -587,7 +599,6 @@
       z-index: 2;
       text-shadow: 0 2px 10px rgba(0,0,0,.55);
     }
-
     .calActions{
       display:flex;
       align-items:center;
@@ -596,7 +607,6 @@
       position: relative;
       z-index: 2;
     }
-
     .act{
       width: 26px; height: 26px;
       border-radius: 9px;
@@ -621,8 +631,6 @@
       border-color: rgba(255,120,150,.55);
       background: rgba(255,120,150,.10);
     }
-
-    /* Muted appearance in calendar */
     .calItem.muted{
       opacity: .40;
       filter: saturate(.6);
@@ -638,7 +646,108 @@
     }
     .moreLink:hover{ opacity: .9; }
 
-    /* MOBILE */
+    /* ---------- DETAIL DRAWER ---------- */
+    .drawerBackdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .drawerBackdrop.open{ display:flex; }
+
+    .drawer{
+      width: 100%;
+      max-width: 860px;
+      border-radius: 18px;
+      border: 1px solid rgba(35,35,58,.8);
+      background: rgba(16,16,26,.96);
+      box-shadow: 0 25px 60px rgba(0,0,0,.6);
+      overflow:hidden;
+    }
+
+    .drawerTop{
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(35,35,58,.7);
+    }
+    .drawerTitle{
+      font-weight: 1000;
+      letter-spacing: .2px;
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+    .drawerClose{
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(43,43,73,.75);
+      background: rgba(0,0,0,.18);
+      color: rgba(234,234,242,.85);
+      cursor:pointer;
+      font-weight: 1000;
+    }
+    .drawerClose:hover{
+      border-color: rgba(255,120,150,.55);
+      background: rgba(255,120,150,.10);
+      color: var(--text);
+    }
+
+    .drawerBody{
+      padding: 14px;
+      display:flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items:flex-start;
+    }
+    .drawerPoster{
+      width: 110px;
+      height: 165px;
+      border-radius: 12px;
+      overflow:hidden;
+      border: 1px solid rgba(43,43,73,.7);
+      background: rgba(15,15,25,.55);
+      flex: 0 0 auto;
+    }
+    .drawerPoster img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .drawerInfo{
+      flex: 1 1 360px;
+      min-width: 260px;
+    }
+    .drawerPlan{
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .drawerBadges{
+      display:flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .drawerActions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 6px 0 10px;
+    }
+    .drawerActions .btn{ padding: 9px 12px; }
+
+    .drawerMonth{ margin-bottom: 8px; }
+    .drawerMonth .monthTag{ font-size: 12px; }
+
     @media (max-width: 700px){
       body{ padding: 12px; }
       .calGrid{ grid-template-columns: repeat(7, minmax(240px, 1fr)); }
@@ -646,57 +755,61 @@
       .posterWrap{ width: 50px; min-width:50px; height:74px; }
       .bead{ width:30px; height:30px; }
       .gapDots{ height:30px; }
+      .drawerBackdrop{ padding: 10px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
-    <div class="sub">
-      Calendar mode is date based (not showtime times yet). Poster backgrounds are purely aesthetic menace.
-    </div>
+    <div class="sub">Calendar is date based. Posters are just to make it feel like a real object instead of a spreadsheet hallucination.</div>
 
-    <div class="controls">
-      <label for="days">Days ahead</label>
-      <input id="days" type="number" min="1" max="365" value="60" />
+    <div class="topRow">
+      <!-- Views -->
+      <div class="bar views">
+        <button class="btn pill" id="modeCal">Calendar</button>
+        <button class="btn pill" id="modeList">List</button>
+      </div>
 
-      <button class="btn primary" id="refresh">Refresh</button>
-      <button class="btn" id="debug">Debug fetch</button>
+      <!-- Controls -->
+      <div class="bar controls">
+        <label for="days">Days ahead</label>
+        <input id="days" type="number" min="1" max="365" value="60" />
 
-      <input id="q" class="search" placeholder="search titles…" />
+        <button class="btn primary" id="refresh">Refresh</button>
+        <button class="btn" id="debug">Debug</button>
 
-      <label class="toggle" title="Group into Now/Next/Later in list modes">
-        <input id="grouped" type="checkbox" checked />
-        grouped
-      </label>
+        <input id="q" class="search" placeholder="search titles…" />
 
-      <label class="toggle" title="Show only titles ending within 3 days">
-        <input id="onlySoon" type="checkbox" />
-        only leaving soon
-      </label>
+        <label class="toggle" title="Group into Now / Next / Later in List view">
+          <input id="grouped" type="checkbox" checked />
+          grouped
+        </label>
 
-      <label class="toggle" title="Muted titles render at the bottom">
-        <input id="mutedBottom" type="checkbox" checked />
-        muted to bottom
-      </label>
+        <label class="toggle" title="Show only titles ending within 3 days">
+          <input id="onlySoon" type="checkbox" />
+          leaving soon
+        </label>
 
-      <label class="toggle" title="Show poster as background in calendar rows">
-        <input id="calPosterBg" type="checkbox" checked />
-        poster background
-      </label>
+        <label class="toggle" title="Muted titles render at the bottom">
+          <input id="mutedBottom" type="checkbox" checked />
+          muted to bottom
+        </label>
 
-      <button class="btn" id="manageBtn" title="Unhide/unmute manager">Manage hidden + muted</button>
+        <label class="toggle" title="Use poster as background in Calendar rows">
+          <input id="calPosterBg" type="checkbox" checked />
+          poster bg
+        </label>
 
-      <span style="flex:1"></span>
+        <button class="btn" id="manageBtn">Manage hidden + muted</button>
 
-      <button class="btn sort active" data-sort="plan">Plan</button>
-      <button class="btn sort" data-sort="az">A Z</button>
-      <button class="btn sort" data-sort="long">Long</button>
-      <button class="btn sort" data-sort="short">Short</button>
+        <span class="spacer"></span>
 
-      <button class="btn" id="modeShort">Short</button>
-      <button class="btn" id="modeList">List</button>
-      <button class="btn" id="modeCal">Calendar</button>
+        <!-- Sort (no AZ) -->
+        <button class="btn pill active" data-sort="plan">Plan</button>
+        <button class="btn pill" data-sort="long">Long</button>
+        <button class="btn pill" data-sort="short">Short</button>
+      </div>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -709,12 +822,12 @@
 
       <div class="mgrGrid">
         <div class="mgrBox">
-          <h3>Hidden (completely removed)</h3>
+          <h3>Hidden</h3>
           <div id="hiddenList" class="mgrList"></div>
         </div>
 
         <div class="mgrBox">
-          <h3>Muted (collapsed/dimmed)</h3>
+          <h3>Muted</h3>
           <div id="mutedList" class="mgrList"></div>
         </div>
       </div>
@@ -729,6 +842,31 @@
     <div id="out"></div>
   </div>
 
+  <!-- DETAIL DRAWER -->
+  <div id="drawerBackdrop" class="drawerBackdrop" role="dialog" aria-modal="true">
+    <div class="drawer">
+      <div class="drawerTop">
+        <h3 id="drawerTitle" class="drawerTitle">Title</h3>
+        <button id="drawerClose" class="drawerClose" aria-label="Close">×</button>
+      </div>
+      <div class="drawerBody">
+        <div class="drawerPoster">
+          <img id="drawerPosterImg" alt="Poster" />
+        </div>
+        <div class="drawerInfo">
+          <div id="drawerBadges" class="drawerBadges"></div>
+          <div id="drawerPlan" class="drawerPlan"></div>
+          <div class="drawerActions">
+            <button class="btn" id="drawerMute">Mute</button>
+            <button class="btn" id="drawerHide">Hide</button>
+          </div>
+          <div id="drawerMonth" class="drawerMonth"></div>
+          <div id="drawerBeads" class="beads"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const out = document.getElementById("out");
     const meta = document.getElementById("meta");
@@ -740,16 +878,27 @@
     const calPosterBgEl = document.getElementById("calPosterBg");
     const qEl = document.getElementById("q");
 
-    const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
+    const sortButtons = Array.from(document.querySelectorAll(".btn.pill[data-sort]"));
 
     const mgrEl = document.getElementById("mgr");
     const hiddenListEl = document.getElementById("hiddenList");
     const mutedListEl = document.getElementById("mutedList");
 
-    const HIDDEN_KEY = "kalispell_hidden_titles_v7";
-    const MUTED_KEY  = "kalispell_muted_titles_v7";
-    const MODE_KEY   = "kalispell_mode_v7";
-    const WEEK_KEY   = "kalispell_week_offset_v7";
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerTitle = document.getElementById("drawerTitle");
+    const drawerPosterImg = document.getElementById("drawerPosterImg");
+    const drawerBadges = document.getElementById("drawerBadges");
+    const drawerPlan = document.getElementById("drawerPlan");
+    const drawerMonth = document.getElementById("drawerMonth");
+    const drawerBeads = document.getElementById("drawerBeads");
+    const drawerMuteBtn = document.getElementById("drawerMute");
+    const drawerHideBtn = document.getElementById("drawerHide");
+    const drawerCloseBtn = document.getElementById("drawerClose");
+
+    const HIDDEN_KEY = "kalispell_hidden_titles_v8";
+    const MUTED_KEY  = "kalispell_muted_titles_v8";
+    const MODE_KEY   = "kalispell_mode_v8";
+    const WEEK_KEY   = "kalispell_week_offset_v8";
 
     function loadSet(key){
       try{
@@ -769,9 +918,10 @@
 
     function hideTitle(title){
       hiddenSet.add(title);
-      mutedSet.delete(title); // hidden wins
+      mutedSet.delete(title);
       saveSet(HIDDEN_KEY, hiddenSet);
       saveSet(MUTED_KEY, mutedSet);
+      closeDrawer();
       render();
     }
     function unhideTitle(title){
@@ -783,6 +933,7 @@
       if(mutedSet.has(title)) mutedSet.delete(title);
       else mutedSet.add(title);
       saveSet(MUTED_KEY, mutedSet);
+      closeDrawer();
       render();
     }
 
@@ -794,66 +945,6 @@
     function closeMgr(){
       mgrEl.classList.remove("open");
     }
-
-    function renderMgr(){
-      const hidden = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
-      const muted  = Array.from(mutedSet).sort((a,b)=>a.localeCompare(b));
-
-      hiddenListEl.innerHTML = hidden.length ? hidden.map(t => `
-        <div class="mgrRow">
-          <div class="mgrName">${escapeHtml(t)}</div>
-          <div class="mgrBtns">
-            <div class="mini" title="unhide" data-unhide="${escapeAttr(t)}">↩</div>
-            <div class="mini danger" title="delete from hidden" data-unhide="${escapeAttr(t)}">×</div>
-          </div>
-        </div>
-      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing hidden</div>`;
-
-      mutedListEl.innerHTML = muted.length ? muted.map(t => `
-        <div class="mgrRow">
-          <div class="mgrName">${escapeHtml(t)}</div>
-          <div class="mgrBtns">
-            <div class="mini" title="unmute" data-mute="${escapeAttr(t)}">+</div>
-            <div class="mini danger" title="hide instead" data-hide="${escapeAttr(t)}">×</div>
-          </div>
-        </div>
-      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing muted</div>`;
-
-      // wire buttons
-      hiddenListEl.querySelectorAll("[data-unhide]").forEach(el=>{
-        el.addEventListener("click", ()=>unhideTitle(el.getAttribute("data-unhide")));
-      });
-      mutedListEl.querySelectorAll("[data-mute]").forEach(el=>{
-        el.addEventListener("click", ()=>toggleMute(el.getAttribute("data-mute")));
-      });
-      mutedListEl.querySelectorAll("[data-hide]").forEach(el=>{
-        el.addEventListener("click", ()=>hideTitle(el.getAttribute("data-hide")));
-      });
-    }
-
-    document.getElementById("manageBtn").addEventListener("click", openMgr);
-    document.getElementById("closeMgr").addEventListener("click", closeMgr);
-
-    document.getElementById("clearHidden").addEventListener("click", ()=>{
-      hiddenSet = new Set();
-      saveSet(HIDDEN_KEY, hiddenSet);
-      render();
-      renderMgr();
-    });
-    document.getElementById("clearMuted").addEventListener("click", ()=>{
-      mutedSet = new Set();
-      saveSet(MUTED_KEY, mutedSet);
-      render();
-      renderMgr();
-    });
-    document.getElementById("clearAll").addEventListener("click", ()=>{
-      hiddenSet = new Set();
-      mutedSet = new Set();
-      saveSet(HIDDEN_KEY, hiddenSet);
-      saveSet(MUTED_KEY, mutedSet);
-      render();
-      renderMgr();
-    });
 
     function escapeHtml(s) {
       return (s || "")
@@ -869,18 +960,71 @@
         .replaceAll(">","&gt;");
     }
 
+    function renderMgr(){
+      const hidden = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
+      const muted  = Array.from(mutedSet).sort((a,b)=>a.localeCompare(b));
+
+      hiddenListEl.innerHTML = hidden.length ? hidden.map(t => `
+        <div class="mgrRow">
+          <div class="mgrName">${escapeHtml(t)}</div>
+          <div class="mgrBtns">
+            <div class="mini" title="unhide" data-unhide="${escapeAttr(t)}">↩</div>
+            <div class="mini danger" title="remove" data-unhide="${escapeAttr(t)}">×</div>
+          </div>
+        </div>
+      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing hidden</div>`;
+
+      mutedListEl.innerHTML = muted.length ? muted.map(t => `
+        <div class="mgrRow">
+          <div class="mgrName">${escapeHtml(t)}</div>
+          <div class="mgrBtns">
+            <div class="mini" title="unmute" data-mute="${escapeAttr(t)}">+</div>
+            <div class="mini danger" title="hide" data-hide="${escapeAttr(t)}">×</div>
+          </div>
+        </div>
+      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing muted</div>`;
+
+      hiddenListEl.querySelectorAll("[data-unhide]").forEach(el=>{
+        el.addEventListener("click", ()=>unhideTitle(el.getAttribute("data-unhide")));
+      });
+      mutedListEl.querySelectorAll("[data-mute]").forEach(el=>{
+        el.addEventListener("click", ()=>toggleMute(el.getAttribute("data-mute")));
+      });
+      mutedListEl.querySelectorAll("[data-hide]").forEach(el=>{
+        el.addEventListener("click", ()=>hideTitle(el.getAttribute("data-hide")));
+      });
+    }
+
+    document.getElementById("manageBtn").addEventListener("click", openMgr);
+    document.getElementById("closeMgr").addEventListener("click", closeMgr);
+    document.getElementById("clearHidden").addEventListener("click", ()=>{
+      hiddenSet = new Set();
+      saveSet(HIDDEN_KEY, hiddenSet);
+      render(); renderMgr();
+    });
+    document.getElementById("clearMuted").addEventListener("click", ()=>{
+      mutedSet = new Set();
+      saveSet(MUTED_KEY, mutedSet);
+      render(); renderMgr();
+    });
+    document.getElementById("clearAll").addEventListener("click", ()=>{
+      hiddenSet = new Set();
+      mutedSet = new Set();
+      saveSet(HIDDEN_KEY, hiddenSet);
+      saveSet(MUTED_KEY, mutedSet);
+      render(); renderMgr();
+    });
+
     function parseISODate(s){
       const [y,m,d] = s.split("-").map(Number);
       return new Date(y, m-1, d);
     }
-
     function daysBetween(a, b){
       const ms = 24*60*60*1000;
       const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
       const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
       return Math.round((ub - ua)/ms);
     }
-
     function getToday(){
       const t = new Date();
       return new Date(t.getFullYear(), t.getMonth(), t.getDate());
@@ -889,7 +1033,6 @@
     function runCount(movie){
       return Array.isArray(movie.dates) ? movie.dates.length : (movie.run_length_days || 0);
     }
-
     function sortedDateObjs(movie){
       const arr = Array.isArray(movie.dates) ? movie.dates.slice() : [];
       arr.sort();
@@ -903,18 +1046,15 @@
       }
       return null;
     }
-
     function getLastShowing(movie){
       const dates = sortedDateObjs(movie);
       return dates.length ? dates[dates.length - 1] : null;
     }
-
     function leavingSoon(movie, today){
       const last = getLastShowing(movie);
       if(!last) return false;
       return daysBetween(today, last) <= 3;
     }
-
     function isShort(movie){ return runCount(movie) <= 3; }
 
     function matchesSearch(movie){
@@ -941,10 +1081,6 @@
       return `${mon} ${day} (${w})`;
     }
 
-    function formatMonthTagNoYear(d){
-      return d.toLocaleString(undefined, { month: "short" });
-    }
-
     function buildBeads(movie, today){
       const dates = sortedDateObjs(movie);
       const beads = [];
@@ -960,21 +1096,17 @@
         }
         prev = dt;
 
-        const y = dt.getFullYear();
-        const m = dt.getMonth();
-        const d = dt.getDate();
-
-        const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
+        const isToday = (dt.getFullYear()===today.getFullYear() && dt.getMonth()===today.getMonth() && dt.getDate()===today.getDate());
         const isPast = (daysBetween(dt, today) < 0);
 
-        const monthKey = `${y}-${m}`;
+        const monthKey = `${dt.getFullYear()}-${dt.getMonth()}`;
         if(monthKey !== lastMonthKey){
-          monthTags.push(formatMonthTagNoYear(dt));
+          monthTags.push(dt.toLocaleString(undefined, { month: "short" }));
           lastMonthKey = monthKey;
         }
 
         beads.push({
-          label: String(d),
+          label: String(dt.getDate()),
           title: dt.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", weekday: "short" }),
           cls: "bead" + (isPast ? " dim" : (isToday ? " today" : ""))
         });
@@ -993,7 +1125,7 @@
       return parts.join("");
     }
 
-    /* posters (used both in list and calendar) */
+    /* posters */
     const posterCache = new Map();
     async function fetchPoster(title){
       if(posterCache.has(title)) return posterCache.get(title);
@@ -1008,6 +1140,7 @@
         return null;
       }
     }
+
     async function hydratePostersInList(){
       const imgs = Array.from(document.querySelectorAll("img.poster[data-title]"));
       const queue = imgs.slice();
@@ -1019,7 +1152,6 @@
           while(active < concurrency && queue.length){
             const img = queue.shift();
             active++;
-
             const title = img.getAttribute("data-title");
             const ph = img.previousElementSibling;
 
@@ -1039,6 +1171,7 @@
         tick();
       });
     }
+
     async function hydrateCalendarBackgrounds(){
       if(!calPosterBgEl.checked) return;
 
@@ -1074,7 +1207,7 @@
     function posterHTML(title){
       const safe = escapeAttr(title);
       return `
-        <div class="posterWrap">
+        <div class="posterWrap" data-open="${safe}">
           <div class="posterPh">poster</div>
           <img class="poster" data-title="${safe}" alt="Poster for ${safe}" />
         </div>
@@ -1086,7 +1219,7 @@
         <div class="card mutedCard">
           <div class="muteRow">
             <h2 class="title">${escapeHtml(title)}</h2>
-            <div class="muteActions">
+            <div class="actions">
               <button class="smallBtn" data-mute="${escapeAttr(title)}">unmute</button>
               <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
             </div>
@@ -1117,12 +1250,9 @@
 
       const { beads, monthTags } = buildBeads(movie, today);
 
-      let monthRow = "";
-      if(monthTags.length){
-        const shown = monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("");
-        const more = monthTags.length > 2 ? `<span class="monthTag">+${monthTags.length-2}</span>` : "";
-        monthRow = `<div class="monthRow">${shown}${more}</div>`;
-      }
+      const monthRow = monthTags.length
+        ? `<div class="monthRow">${monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("")}${monthTags.length>2?`<span class="monthTag">+${monthTags.length-2}</span>`:""}</div>`
+        : "";
 
       const beadsHTML = beads.map(b => {
         if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
@@ -1130,12 +1260,12 @@
       }).join("");
 
       return `
-        <div class="card">
+        <div class="card" data-open="${escapeAttr(title)}">
           <div class="cardRow">
             ${posterHTML(title)}
             <div class="content">
               <div class="titleRow">
-                <h2 class="title">${escapeHtml(title)}</h2>
+                <h2 class="title" data-open="${escapeAttr(title)}">${escapeHtml(title)}</h2>
                 <div class="badges">${badgeHTML(movie, today)}</div>
               </div>
 
@@ -1148,8 +1278,8 @@
                 </div>
 
                 <div class="actions">
-                  <button class="smallBtn" data-mute="${escapeAttr(title)}" title="Collapse this title">mute</button>
-                  <button class="smallBtn" data-hide="${escapeAttr(title)}" title="Hide this title">hide</button>
+                  <button class="smallBtn" data-mute="${escapeAttr(title)}">mute</button>
+                  <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
                 </div>
               </div>
 
@@ -1163,29 +1293,41 @@
 
     function attachHandlers(){
       document.querySelectorAll("[data-hide]").forEach(el=>{
-        el.addEventListener("click", ()=>{
-          const title = el.getAttribute("data-hide");
-          hideTitle(title);
+        el.addEventListener("click", (ev)=>{
+          ev.stopPropagation();
+          hideTitle(el.getAttribute("data-hide"));
         });
       });
       document.querySelectorAll("[data-mute]").forEach(el=>{
-        el.addEventListener("click", ()=>{
-          const title = el.getAttribute("data-mute");
-          toggleMute(title);
+        el.addEventListener("click", (ev)=>{
+          ev.stopPropagation();
+          toggleMute(el.getAttribute("data-mute"));
+        });
+      });
+
+      // open drawer
+      document.querySelectorAll("[data-open]").forEach(el=>{
+        el.addEventListener("click", (ev)=>{
+          const t = el.getAttribute("data-open");
+          if(!t) return;
+          // don’t open if click was on a button
+          if(ev.target && (ev.target.matches("button") || ev.target.classList.contains("act") || ev.target.classList.contains("mini"))) return;
+          openDrawer(t);
         });
       });
     }
 
     /* ---------- modes ---------- */
-    let mode = localStorage.getItem(MODE_KEY) || "calendar";
+    let mode = localStorage.getItem(MODE_KEY) || "list";
     function setMode(m){
       mode = m;
       localStorage.setItem(MODE_KEY, m);
+      document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
+      document.getElementById("modeList").classList.toggle("active", mode==="list");
       render();
     }
-    document.getElementById("modeShort").addEventListener("click", ()=>setMode("short"));
-    document.getElementById("modeList").addEventListener("click", ()=>setMode("list"));
     document.getElementById("modeCal").addEventListener("click", ()=>setMode("calendar"));
+    document.getElementById("modeList").addEventListener("click", ()=>setMode("list"));
 
     /* ---------- sorting ---------- */
     let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
@@ -1200,9 +1342,7 @@
     function sortList(list, today){
       const arr = list.slice();
 
-      if(state.sort === "az"){
-        arr.sort((a,b) => (a.title||"").localeCompare(b.title||""));
-      } else if(state.sort === "long"){
+      if(state.sort === "long"){
         arr.sort((a,b) => (runCount(b) - runCount(a)) || (a.title||"").localeCompare(b.title||""));
       } else if(state.sort === "short"){
         arr.sort((a,b) => (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||""));
@@ -1229,25 +1369,46 @@
       return arr;
     }
 
+    /* ---------- Grouping (FIXED) ---------- */
+    function splitGroups(movies, today){
+      const now = [];
+      const next = [];
+      const later = [];
+
+      for(const m of movies){
+        const nx = getNextShowing(m, today);
+        if(!nx){ later.push(m); continue; }
+        const d = daysBetween(today, nx);
+        if(d <= 0) now.push(m);
+        else if(d <= 7) next.push(m);
+        else later.push(m);
+      }
+      return { now, next, later };
+    }
+
+    function sectionHTML(title, inner){
+      return `
+        <div style="margin: 10px 0 14px;">
+          <div style="font-weight:1000;opacity:.85;margin: 0 0 8px; letter-spacing:.3px;">${escapeHtml(title)}</div>
+          ${inner}
+        </div>
+      `;
+    }
+
+    /* ---------- Calendar ---------- */
     function startOfWeek(d){
       const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const dow = nd.getDay(); // 0 sun
       nd.setDate(nd.getDate() - dow);
       return nd;
     }
-
     function fmtHeaderRange(weekStart){
       const end = new Date(weekStart);
       end.setDate(end.getDate() + 6);
-
-      const optsA = { month:"short", day:"numeric" };
-      const optsB = { month:"short", day:"numeric", year:"numeric" };
-
-      const a = weekStart.toLocaleString(undefined, optsA);
-      const b = end.toLocaleString(undefined, optsB);
+      const a = weekStart.toLocaleString(undefined, { month:"short", day:"numeric" });
+      const b = end.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric" });
       return `${a} – ${b}`;
     }
-
     function fmtDayLabel(d){
       const dow = d.toLocaleString(undefined, { weekday:"short" }).toUpperCase();
       const md = d.toLocaleString(undefined, { month:"short", day:"numeric" });
@@ -1260,13 +1421,13 @@
       const mutedClass = isMuted ? " muted" : "";
 
       return `
-        <div class="calItem${mutedClass}" data-title="${attr}" title="${safeTitle}">
+        <div class="calItem${mutedClass}" data-title="${attr}" data-open="${attr}" title="${safeTitle}">
           <div class="calBg"></div>
           <div class="calShade"></div>
 
           <div class="dot ${dotClass}"></div>
           <div class="calName">${safeTitle}</div>
-          <div class="calActions">
+          <div class="calActions" onclick="event.stopPropagation()">
             <div class="act" data-mute="${attr}" title="mute/unmute">−</div>
             <div class="act hide" data-hide="${attr}" title="hide">×</div>
           </div>
@@ -1296,7 +1457,6 @@
         dayMap.set(key, []);
       }
 
-      // add movies for each listed date inside the week
       for(const m of movies){
         if(!moviePassesFilters(m, today)) continue;
 
@@ -1312,7 +1472,6 @@
         }
       }
 
-      // sort each day
       for(const [k, arr] of dayMap.entries()){
         arr.sort((a,b)=> a.title.localeCompare(b.title));
         if(mutedBottomEl.checked){
@@ -1330,7 +1489,7 @@
         const { dow, md } = fmtDayLabel(d);
 
         const items = dayMap.get(key);
-        const maxShow = 10;
+        const maxShow = 12;
         const shown = items.slice(0, maxShow);
         const hidden = items.length - shown.length;
 
@@ -1357,7 +1516,6 @@
       out.innerHTML = controls + `<div class="calGrid">${cols}</div>`;
       attachHandlers();
 
-      // week nav
       let wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
       function setWeekOffset(newOffset){
         wkOffset = newOffset;
@@ -1365,6 +1523,7 @@
         const t = getToday();
         t.setDate(t.getDate() + (wkOffset * 7));
         renderCalendar(state.movies, t);
+        hydrateCalendarBackgrounds();
       }
 
       document.getElementById("wkPrev").addEventListener("click", ()=>setWeekOffset(wkOffset - 1));
@@ -1372,9 +1531,9 @@
       document.getElementById("wkToday").addEventListener("click", ()=>{
         localStorage.setItem(WEEK_KEY, "0");
         renderCalendar(state.movies, getToday());
+        hydrateCalendarBackgrounds();
       });
 
-      // expand "+more"
       document.querySelectorAll("[data-more]").forEach(el=>{
         el.addEventListener("click", ()=>{
           const dayKey = el.getAttribute("data-more");
@@ -1389,8 +1548,8 @@
       hydrateCalendarBackgrounds();
     }
 
-    function renderListOrShort(kind, today){
-      // kind: "list" or "short"
+    /* ---------- List render ---------- */
+    function renderList(today){
       const filtered = state.movies.filter(m => moviePassesFilters(m, today));
       const sorted = sortList(filtered, today);
 
@@ -1399,40 +1558,120 @@
         return;
       }
 
-      // short mode: if you want, we can later tighten these cards more.
-      out.innerHTML = `<div class="grid">${sorted.map(m => cardHTML(m, today)).join("")}</div>`;
+      // GROUPING FIX: actually apply it
+      if(groupedEl.checked){
+        const g = splitGroups(sorted, today);
+
+        const nowHTML = `<div class="grid">${g.now.map(m => cardHTML(m, today)).join("")}</div>`;
+        const nextHTML = `<div class="grid">${g.next.map(m => cardHTML(m, today)).join("")}</div>`;
+        const laterHTML = `<div class="grid">${g.later.map(m => cardHTML(m, today)).join("")}</div>`;
+
+        out.innerHTML =
+          sectionHTML("Now", nowHTML) +
+          sectionHTML("Next 7 days", nextHTML) +
+          sectionHTML("Later", laterHTML);
+      } else {
+        out.innerHTML = `<div class="grid">${sorted.map(m => cardHTML(m, today)).join("")}</div>`;
+      }
+
       attachHandlers();
       hydratePostersInList();
     }
 
+    /* ---------- Detail Drawer ---------- */
+    let drawerTitleValue = null;
+
+    async function openDrawer(title){
+      drawerTitleValue = title;
+      drawerTitle.textContent = title;
+
+      drawerMuteBtn.textContent = mutedSet.has(title) ? "Unmute" : "Mute";
+      drawerHideBtn.textContent = "Hide";
+
+      // find movie data
+      const movie = state.movies.find(m => m.title === title);
+      const today = getToday();
+      if(movie){
+        drawerBadges.innerHTML = badgeHTML(movie, today);
+
+        const next = getNextShowing(movie, today);
+        const last = getLastShowing(movie);
+        if(next && last){
+          const nextLabel = formatNextLabel(next, today);
+          const endsIn = daysBetween(today, last);
+          let endText = "";
+          if(endsIn === 0) endText = "ends today";
+          else if(endsIn === 1) endText = "ends tomorrow";
+          else if(endsIn > 1) endText = `ends in ${endsIn} days`;
+          else endText = "ended";
+          drawerPlan.textContent = `Next showing: ${nextLabel} · ${endText}`;
+        } else {
+          drawerPlan.textContent = "";
+        }
+
+        const { beads, monthTags } = buildBeads(movie, today);
+        drawerMonth.innerHTML = monthTags.length ? monthTags.map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("") : "";
+
+        drawerBeads.innerHTML = beads.map(b => {
+          if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
+          return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
+        }).join("");
+      } else {
+        drawerBadges.innerHTML = "";
+        drawerPlan.textContent = "";
+        drawerMonth.innerHTML = "";
+        drawerBeads.innerHTML = "";
+      }
+
+      drawerBackdrop.classList.add("open");
+
+      // poster
+      drawerPosterImg.src = "";
+      const url = await fetchPoster(title);
+      if(url) drawerPosterImg.src = url;
+    }
+
+    function closeDrawer(){
+      drawerBackdrop.classList.remove("open");
+      drawerTitleValue = null;
+    }
+
+    drawerCloseBtn.addEventListener("click", closeDrawer);
+    drawerBackdrop.addEventListener("click", (e)=>{
+      if(e.target === drawerBackdrop) closeDrawer();
+    });
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape") closeDrawer();
+    });
+
+    drawerMuteBtn.addEventListener("click", ()=>{
+      if(!drawerTitleValue) return;
+      toggleMute(drawerTitleValue);
+    });
+    drawerHideBtn.addEventListener("click", ()=>{
+      if(!drawerTitleValue) return;
+      hideTitle(drawerTitleValue);
+    });
+
+    /* ---------- Main render ---------- */
     function render(){
       const today = getToday();
-
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
-      if(mgrEl.classList.contains("open")){
-        renderMgr();
-      }
+      if(mgrEl.classList.contains("open")) renderMgr();
+
+      // highlight active view buttons
+      document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
+      document.getElementById("modeList").classList.toggle("active", mode==="list");
 
       if(mode === "calendar"){
         const wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
         const t = getToday();
         t.setDate(t.getDate() + (wkOffset * 7));
         renderCalendar(state.movies, t);
-        return;
+      } else {
+        renderList(today);
       }
-
-      if(mode === "list"){
-        renderListOrShort("list", today);
-        return;
-      }
-
-      if(mode === "short"){
-        renderListOrShort("short", today);
-        return;
-      }
-
-      renderCalendar(state.movies, today);
     }
 
     async function load(){
@@ -1487,12 +1726,22 @@
     calPosterBgEl.addEventListener("change", render);
     qEl.addEventListener("input", render);
 
-    // persist mode buttons
-    if(!localStorage.getItem(MODE_KEY)){
-      localStorage.setItem(MODE_KEY, mode);
+    // init mode + sort
+    if(!localStorage.getItem(MODE_KEY)) localStorage.setItem(MODE_KEY, mode);
+
+    function initSortButtons(){
+      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === state.sort));
+    }
+    initSortButtons();
+
+    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
+    function setSort(newSort){
+      state.sort = newSort;
+      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
+      render();
     }
 
-    // init
+    // start
     load();
   </script>
 </body>
