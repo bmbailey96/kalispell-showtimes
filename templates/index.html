@@ -19,7 +19,7 @@
       --beadBorder:#2b2b49;
       --beadDim:#0f0f19;
 
-      --shadow: 0 8px 24px rgba(0,0,0,.35);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
 
       --warnBg:#2a0f16;
       --warnBorder:#5a1b2a;
@@ -53,11 +53,7 @@
     }
 
     /* FULL WIDTH */
-    .wrap{
-      width: 100%;
-      max-width: none;
-      margin: 0;
-    }
+    .wrap{ width:100%; max-width:none; margin:0; }
 
     h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
     .sub{ opacity:.8; margin-bottom:18px; max-width: 110ch; }
@@ -139,53 +135,8 @@
     .meta{
       font-size:13px;
       opacity:.75;
-      margin:10px 0 18px;
+      margin:10px 0 12px;
       white-space:pre-wrap;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-    }
-    @media (min-width: 900px){
-      .grid{ grid-template-columns: 1fr 1fr; }
-    }
-
-    .section{
-      margin: 18px 0 8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--sectionBg);
-      display:flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      box-shadow: var(--shadow);
-    }
-    .sectionTitle{
-      margin:0;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: .4px;
-      text-transform: uppercase;
-      opacity: .92;
-    }
-    .sectionHint{
-      font-size: 12px;
-      color: var(--muted2);
-      white-space: nowrap;
-    }
-
-    .card{
-      padding:14px 14px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:var(--panel);
-      box-shadow: var(--shadow);
-      position:relative;
-      overflow:hidden;
     }
 
     .error{
@@ -198,7 +149,298 @@
       box-shadow: var(--shadow);
     }
 
-    /* ---------- CALENDAR MODE STYLES ---------- */
+    /* ---------- Manager drawer (Hidden / Muted) ---------- */
+    .mgr{
+      border: 1px solid rgba(35,35,58,.7);
+      background: rgba(16,16,26,.75);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      display:none;
+    }
+    .mgr.open{ display:block; }
+
+    .mgrHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom: 8px;
+    }
+    .mgrTitle{ font-weight: 900; font-size: 13px; letter-spacing: .3px; text-transform: uppercase; opacity:.9; margin:0; }
+    .mgrGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 900px){
+      .mgrGrid{ grid-template-columns: 1fr; }
+    }
+    .mgrBox{
+      border: 1px solid rgba(35,35,58,.65);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(15,15,25,.55);
+    }
+    .mgrBox h3{
+      margin: 0 0 8px;
+      font-size: 12px;
+      letter-spacing: .2px;
+      opacity:.8;
+      text-transform: uppercase;
+    }
+    .mgrList{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-height: 220px;
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .mgrRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding: 7px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(35,35,58,.55);
+      background: rgba(10,10,16,.35);
+    }
+    .mgrName{
+      min-width:0;
+      flex:1;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity:.9;
+    }
+    .mgrBtns{ display:flex; gap:6px; }
+    .mini{
+      width: 30px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(43,43,73,.75);
+      background: rgba(0,0,0,.18);
+      color: rgba(234,234,242,.75);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      font-weight: 900;
+      line-height:1;
+    }
+    .mini:hover{
+      color: var(--text);
+      border-color: rgba(154,209,255,.55);
+      background: rgba(154,209,255,.10);
+    }
+    .mini.danger:hover{
+      border-color: rgba(255,120,150,.55);
+      background: rgba(255,120,150,.10);
+    }
+    .mgrFoot{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 10px;
+    }
+
+    /* ---------- LIST VIEW cards (with poster) ---------- */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
+    @media (min-width: 900px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .card{
+      padding:14px 14px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .cardRow{ display:flex; gap:12px; align-items:flex-start; }
+
+    .posterWrap{
+      width: 62px;
+      min-width: 62px;
+      height: 92px;
+      border-radius: 10px;
+      overflow:hidden;
+      border: 1px solid rgba(43,43,73,.7);
+      background: rgba(15,15,25,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex: 0 0 auto;
+    }
+    .poster{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    .poster.loaded{ opacity: 1; }
+    .posterPh{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(234,234,242,.25);
+      font-weight: 900;
+      letter-spacing: .6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      user-select:none;
+    }
+
+    .content{ flex:1; min-width:0; }
+
+    .titleRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .title{
+      font-size:16px;
+      font-weight:900;
+      line-height:1.12;
+      margin:0;
+    }
+    .badges{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      max-width: 62%;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid var(--beadBorder);
+      background:#0f0f19;
+      font-size:12px;
+      opacity:.92;
+      white-space:nowrap;
+      font-weight:750;
+      letter-spacing:.15px;
+    }
+    .badge.warn{ background:var(--warnBg); border-color:var(--warnBorder); color:var(--warnText); }
+    .badge.short{ background:#201d10; border-color:#5b4e1f; color:#ffe6a6; }
+    .badge.small{ opacity:.75; font-weight:650; }
+
+    .planRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin: 6px 0 10px;
+      flex-wrap:wrap;
+    }
+    .planLine{
+      font-size: 13px;
+      color: var(--muted);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .planLabel{ color: var(--muted2); }
+    .planValue{ font-weight: 900; color: var(--text); }
+
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .smallBtn{
+      border: 1px solid rgba(43,43,73,.8);
+      background: rgba(15,15,25,.55);
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+      line-height: 1;
+      white-space:nowrap;
+    }
+    .smallBtn:hover{
+      border-color: rgba(154,209,255,.5);
+      color: var(--text);
+    }
+
+    .monthRow{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; min-height: 18px; }
+    .monthTag{
+      font-size:12px;
+      color: var(--muted2);
+      border:1px solid rgba(43,43,73,.65);
+      background: rgba(15,15,25,.55);
+      padding:2px 8px;
+      border-radius:999px;
+    }
+
+    .beads{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+    .bead{
+      width:34px; height:34px;
+      border-radius:999px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:900;
+      letter-spacing:.2px;
+      background:var(--bead);
+      border:1px solid var(--beadBorder);
+      color: var(--text);
+    }
+    .bead.dim{ opacity:.35; background: rgba(15,15,25,.6); }
+    .bead.today{
+      background: var(--todayBg);
+      border-color: var(--todayBorder);
+      box-shadow: 0 0 0 2px rgba(107,184,255,.12);
+    }
+    .gapDots{
+      width: 22px;
+      height: 34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(234,234,242,.22);
+      font-weight: 900;
+      letter-spacing: 2px;
+      user-select:none;
+    }
+
+    /* muted collapse in list view */
+    .mutedCard{
+      padding: 10px 12px;
+      opacity: .35;
+      filter: saturate(.55);
+    }
+    .mutedCard .muteRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .mutedCard .title{ font-size: 14px; }
+    .mutedCard .muteActions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    /* ---------- CALENDAR MODE ---------- */
     .calTop{
       display:flex;
       align-items:center;
@@ -212,11 +454,8 @@
       font-weight: 900;
       margin: 0;
     }
-    .calNav{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
+    .calNav{ display:flex; align-items:center; gap:10px; }
+
     .iconBtn{
       width: 34px;
       height: 34px;
@@ -251,7 +490,7 @@
 
     .calGrid{
       display:grid;
-      grid-template-columns: repeat(7, minmax(140px, 1fr));
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
       gap: 12px;
       width: 100%;
       overflow-x: auto;
@@ -289,26 +528,47 @@
       opacity: .9;
     }
 
-    /* THE FIX: readable calendar row */
+    /* Calendar item with optional poster background */
     .calItem{
+      position: relative;
       display:flex;
       align-items:center;
       gap: 8px;
-      padding: 8px 8px;
+      padding: 9px 8px;
       border-radius: 12px;
       border: 1px solid rgba(35,35,58,.65);
       background: rgba(15,15,25,.55);
       margin-bottom: 8px;
       min-width: 0;
+      overflow:hidden;
+    }
+
+    .calItem.hasPoster{
+      background: #0f0f19;
+    }
+    .calBg{
+      position:absolute;
+      inset:0;
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.05) contrast(1.05);
+      transform: scale(1.04);
+      opacity: .55;
+    }
+    .calShade{
+      position:absolute;
+      inset:0;
+      background: linear-gradient(90deg, rgba(11,11,15,.92), rgba(11,11,15,.68) 55%, rgba(11,11,15,.92));
     }
 
     .dot{
-      width: 10px;
-      height: 10px;
+      width: 10px; height: 10px;
       border-radius: 999px;
       background: rgba(154,209,255,.9);
       box-shadow: 0 0 0 3px rgba(154,209,255,.10);
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
     .dot.soon{ background: rgba(255,120,150,.95); box-shadow: 0 0 0 3px rgba(255,120,150,.12); }
     .dot.short{ background: rgba(255,220,120,.95); box-shadow: 0 0 0 3px rgba(255,220,120,.10); }
@@ -316,13 +576,16 @@
     .calName{
       flex: 1 1 auto;
       min-width: 0;
-      font-weight: 850;
+      font-weight: 900;
       font-size: 13px;
       line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      opacity: .95;
+      opacity: .96;
+      position: relative;
+      z-index: 2;
+      text-shadow: 0 2px 10px rgba(0,0,0,.55);
     }
 
     .calActions{
@@ -330,15 +593,16 @@
       align-items:center;
       gap: 6px;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .act{
-      width: 26px;
-      height: 26px;
+      width: 26px; height: 26px;
       border-radius: 9px;
       border: 1px solid rgba(43,43,73,.75);
-      background: rgba(10,10,16,.35);
-      color: rgba(234,234,242,.75);
+      background: rgba(0,0,0,.22);
+      color: rgba(234,234,242,.80);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -346,6 +610,7 @@
       user-select:none;
       font-weight: 900;
       line-height: 1;
+      text-shadow:none;
     }
     .act:hover{
       color: var(--text);
@@ -355,6 +620,12 @@
     .act.hide:hover{
       border-color: rgba(255,120,150,.55);
       background: rgba(255,120,150,.10);
+    }
+
+    /* Muted appearance in calendar */
+    .calItem.muted{
+      opacity: .40;
+      filter: saturate(.6);
     }
 
     .moreLink{
@@ -370,8 +641,11 @@
     /* MOBILE */
     @media (max-width: 700px){
       body{ padding: 12px; }
-      .calGrid{ grid-template-columns: repeat(7, minmax(220px, 1fr)); }
+      .calGrid{ grid-template-columns: repeat(7, minmax(240px, 1fr)); }
       .dayCol{ min-height: 420px; }
+      .posterWrap{ width: 50px; min-width:50px; height:74px; }
+      .bead{ width:30px; height:30px; }
+      .gapDots{ height:30px; }
     }
   </style>
 </head>
@@ -379,7 +653,7 @@
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      Calendar mode is date based (not showtime times yet). If you want the full “4:45p” calendar later, we’ll upgrade the scraper.
+      Calendar mode is date based (not showtime times yet). Poster backgrounds are purely aesthetic menace.
     </div>
 
     <div class="controls">
@@ -391,26 +665,34 @@
 
       <input id="q" class="search" placeholder="search titles…" />
 
-      <label class="toggle">
+      <label class="toggle" title="Group into Now/Next/Later in list modes">
         <input id="grouped" type="checkbox" checked />
         grouped
       </label>
 
-      <label class="toggle">
+      <label class="toggle" title="Show only titles ending within 3 days">
         <input id="onlySoon" type="checkbox" />
         only leaving soon
       </label>
 
-      <label class="toggle">
+      <label class="toggle" title="Muted titles render at the bottom">
         <input id="mutedBottom" type="checkbox" checked />
         muted to bottom
       </label>
+
+      <label class="toggle" title="Show poster as background in calendar rows">
+        <input id="calPosterBg" type="checkbox" checked />
+        poster background
+      </label>
+
+      <button class="btn" id="manageBtn" title="Unhide/unmute manager">Manage hidden + muted</button>
 
       <span style="flex:1"></span>
 
       <button class="btn sort active" data-sort="plan">Plan</button>
       <button class="btn sort" data-sort="az">A Z</button>
       <button class="btn sort" data-sort="long">Long</button>
+      <button class="btn sort" data-sort="short">Short</button>
 
       <button class="btn" id="modeShort">Short</button>
       <button class="btn" id="modeList">List</button>
@@ -418,23 +700,56 @@
     </div>
 
     <div id="meta" class="meta"></div>
+
+    <div id="mgr" class="mgr">
+      <div class="mgrHead">
+        <h2 class="mgrTitle">Hidden and Muted Manager</h2>
+        <button class="btn" id="closeMgr">Close</button>
+      </div>
+
+      <div class="mgrGrid">
+        <div class="mgrBox">
+          <h3>Hidden (completely removed)</h3>
+          <div id="hiddenList" class="mgrList"></div>
+        </div>
+
+        <div class="mgrBox">
+          <h3>Muted (collapsed/dimmed)</h3>
+          <div id="mutedList" class="mgrList"></div>
+        </div>
+      </div>
+
+      <div class="mgrFoot">
+        <button class="btn" id="clearHidden">Clear hidden</button>
+        <button class="btn" id="clearMuted">Clear muted</button>
+        <button class="btn" id="clearAll">Clear both</button>
+      </div>
+    </div>
+
     <div id="out"></div>
   </div>
 
   <script>
     const out = document.getElementById("out");
     const meta = document.getElementById("meta");
+
     const daysEl = document.getElementById("days");
     const onlySoonEl = document.getElementById("onlySoon");
     const groupedEl = document.getElementById("grouped");
     const mutedBottomEl = document.getElementById("mutedBottom");
+    const calPosterBgEl = document.getElementById("calPosterBg");
     const qEl = document.getElementById("q");
 
     const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
 
-    const HIDDEN_KEY = "kalispell_hidden_titles_v6";
-    const MUTED_KEY  = "kalispell_muted_titles_v6";
-    const MODE_KEY   = "kalispell_mode_v6";
+    const mgrEl = document.getElementById("mgr");
+    const hiddenListEl = document.getElementById("hiddenList");
+    const mutedListEl = document.getElementById("mutedList");
+
+    const HIDDEN_KEY = "kalispell_hidden_titles_v7";
+    const MUTED_KEY  = "kalispell_muted_titles_v7";
+    const MODE_KEY   = "kalispell_mode_v7";
+    const WEEK_KEY   = "kalispell_week_offset_v7";
 
     function loadSet(key){
       try{
@@ -454,6 +769,13 @@
 
     function hideTitle(title){
       hiddenSet.add(title);
+      mutedSet.delete(title); // hidden wins
+      saveSet(HIDDEN_KEY, hiddenSet);
+      saveSet(MUTED_KEY, mutedSet);
+      render();
+    }
+    function unhideTitle(title){
+      hiddenSet.delete(title);
       saveSet(HIDDEN_KEY, hiddenSet);
       render();
     }
@@ -464,9 +786,85 @@
       render();
     }
 
+    function openMgr(){
+      mgrEl.classList.add("open");
+      renderMgr();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    function closeMgr(){
+      mgrEl.classList.remove("open");
+    }
+
+    function renderMgr(){
+      const hidden = Array.from(hiddenSet).sort((a,b)=>a.localeCompare(b));
+      const muted  = Array.from(mutedSet).sort((a,b)=>a.localeCompare(b));
+
+      hiddenListEl.innerHTML = hidden.length ? hidden.map(t => `
+        <div class="mgrRow">
+          <div class="mgrName">${escapeHtml(t)}</div>
+          <div class="mgrBtns">
+            <div class="mini" title="unhide" data-unhide="${escapeAttr(t)}">↩</div>
+            <div class="mini danger" title="delete from hidden" data-unhide="${escapeAttr(t)}">×</div>
+          </div>
+        </div>
+      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing hidden</div>`;
+
+      mutedListEl.innerHTML = muted.length ? muted.map(t => `
+        <div class="mgrRow">
+          <div class="mgrName">${escapeHtml(t)}</div>
+          <div class="mgrBtns">
+            <div class="mini" title="unmute" data-mute="${escapeAttr(t)}">+</div>
+            <div class="mini danger" title="hide instead" data-hide="${escapeAttr(t)}">×</div>
+          </div>
+        </div>
+      `).join("") : `<div style="opacity:.6;font-size:12px;">nothing muted</div>`;
+
+      // wire buttons
+      hiddenListEl.querySelectorAll("[data-unhide]").forEach(el=>{
+        el.addEventListener("click", ()=>unhideTitle(el.getAttribute("data-unhide")));
+      });
+      mutedListEl.querySelectorAll("[data-mute]").forEach(el=>{
+        el.addEventListener("click", ()=>toggleMute(el.getAttribute("data-mute")));
+      });
+      mutedListEl.querySelectorAll("[data-hide]").forEach(el=>{
+        el.addEventListener("click", ()=>hideTitle(el.getAttribute("data-hide")));
+      });
+    }
+
+    document.getElementById("manageBtn").addEventListener("click", openMgr);
+    document.getElementById("closeMgr").addEventListener("click", closeMgr);
+
+    document.getElementById("clearHidden").addEventListener("click", ()=>{
+      hiddenSet = new Set();
+      saveSet(HIDDEN_KEY, hiddenSet);
+      render();
+      renderMgr();
+    });
+    document.getElementById("clearMuted").addEventListener("click", ()=>{
+      mutedSet = new Set();
+      saveSet(MUTED_KEY, mutedSet);
+      render();
+      renderMgr();
+    });
+    document.getElementById("clearAll").addEventListener("click", ()=>{
+      hiddenSet = new Set();
+      mutedSet = new Set();
+      saveSet(HIDDEN_KEY, hiddenSet);
+      saveSet(MUTED_KEY, mutedSet);
+      render();
+      renderMgr();
+    });
+
     function escapeHtml(s) {
       return (s || "")
         .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+    }
+    function escapeAttr(s){
+      return (s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll('"',"&quot;")
         .replaceAll("<","&lt;")
         .replaceAll(">","&gt;");
     }
@@ -517,9 +915,7 @@
       return daysBetween(today, last) <= 3;
     }
 
-    function isShort(movie){
-      return runCount(movie) <= 3;
-    }
+    function isShort(movie){ return runCount(movie) <= 3; }
 
     function matchesSearch(movie){
       const q = (qEl.value || "").trim().toLowerCase();
@@ -534,50 +930,235 @@
       return true;
     }
 
-    let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
-    let mode = localStorage.getItem(MODE_KEY) || "calendar";
-
-    function setMode(m){
-      mode = m;
-      localStorage.setItem(MODE_KEY, m);
-      render();
+    function formatNextLabel(dt, today){
+      const diff = daysBetween(today, dt);
+      const w = dt.toLocaleString(undefined, { weekday: "short" });
+      const mon = dt.toLocaleString(undefined, { month: "short" });
+      const day = dt.getDate();
+      if(diff === 0) return `Today (${w})`;
+      if(diff === 1) return `Tomorrow (${w})`;
+      if(diff > 1 && diff <= 7) return `${w} (${mon} ${day})`;
+      return `${mon} ${day} (${w})`;
     }
 
-    document.getElementById("modeShort").addEventListener("click", ()=>setMode("short"));
-    document.getElementById("modeList").addEventListener("click", ()=>setMode("list"));
-    document.getElementById("modeCal").addEventListener("click", ()=>setMode("calendar"));
-
-    function setSort(newSort){
-      state.sort = newSort;
-      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
-      render();
+    function formatMonthTagNoYear(d){
+      return d.toLocaleString(undefined, { month: "short" });
     }
-    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
 
-    function sortList(list, today){
-      const arr = list.slice();
-      if(state.sort === "az"){
-        arr.sort((a,b) => (a.title||"").localeCompare(b.title||""));
-      } else if(state.sort === "long"){
-        arr.sort((a,b) => (runCount(b) - runCount(a)) || (a.title||"").localeCompare(b.title||""));
-      } else {
-        arr.sort((a,b) => {
-          const an = getNextShowing(a,today);
-          const bn = getNextShowing(b,today);
-          const ad = an ? daysBetween(today, an) : 9999;
-          const bd = bn ? daysBetween(today, bn) : 9999;
-          const aSoon = leavingSoon(a,today) ? 0 : 1;
-          const bSoon = leavingSoon(b,today) ? 0 : 1;
-          return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
+    function buildBeads(movie, today){
+      const dates = sortedDateObjs(movie);
+      const beads = [];
+      const monthTags = [];
+
+      let lastMonthKey = null;
+      let prev = null;
+
+      for(const dt of dates){
+        if(prev){
+          const gap = daysBetween(prev, dt);
+          if(gap > 1) beads.push({ gap: true });
+        }
+        prev = dt;
+
+        const y = dt.getFullYear();
+        const m = dt.getMonth();
+        const d = dt.getDate();
+
+        const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
+        const isPast = (daysBetween(dt, today) < 0);
+
+        const monthKey = `${y}-${m}`;
+        if(monthKey !== lastMonthKey){
+          monthTags.push(formatMonthTagNoYear(dt));
+          lastMonthKey = monthKey;
+        }
+
+        beads.push({
+          label: String(d),
+          title: dt.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", weekday: "short" }),
+          cls: "bead" + (isPast ? " dim" : (isToday ? " today" : ""))
         });
       }
 
-      if(mutedBottomEl.checked){
-        const unmuted = arr.filter(m => !mutedSet.has(m.title));
-        const muted = arr.filter(m => mutedSet.has(m.title));
-        return unmuted.concat(muted);
+      return { beads, monthTags };
+    }
+
+    function badgeHTML(movie, today){
+      const n = runCount(movie);
+      const soon = leavingSoon(movie, today);
+      const parts = [];
+      if(soon) parts.push(`<span class="badge warn">LEAVING SOON</span>`);
+      if(n <= 3) parts.push(`<span class="badge short">SHORT RUN</span>`);
+      parts.push(`<span class="badge small">${n} day${n===1?"":"s"}</span>`);
+      return parts.join("");
+    }
+
+    /* posters (used both in list and calendar) */
+    const posterCache = new Map();
+    async function fetchPoster(title){
+      if(posterCache.has(title)) return posterCache.get(title);
+      try{
+        const res = await fetch(`/api/poster?title=${encodeURIComponent(title)}`, { cache: "no-store" });
+        const data = await res.json();
+        const url = (data && data.ok) ? data.poster_url : null;
+        posterCache.set(title, url);
+        return url;
+      }catch{
+        posterCache.set(title, null);
+        return null;
       }
-      return arr;
+    }
+    async function hydratePostersInList(){
+      const imgs = Array.from(document.querySelectorAll("img.poster[data-title]"));
+      const queue = imgs.slice();
+      const concurrency = 4;
+      let active = 0;
+
+      return new Promise((resolve)=>{
+        const tick = async () => {
+          while(active < concurrency && queue.length){
+            const img = queue.shift();
+            active++;
+
+            const title = img.getAttribute("data-title");
+            const ph = img.previousElementSibling;
+
+            fetchPoster(title).then((url)=>{
+              if(url){
+                img.src = url;
+                img.onload = () => img.classList.add("loaded");
+                if(ph) ph.style.display = "none";
+              }
+            }).finally(()=>{
+              active--;
+              if(queue.length === 0 && active === 0) resolve();
+              else tick();
+            });
+          }
+        };
+        tick();
+      });
+    }
+    async function hydrateCalendarBackgrounds(){
+      if(!calPosterBgEl.checked) return;
+
+      const items = Array.from(document.querySelectorAll(".calItem[data-title]"));
+      const queue = items.slice();
+      const concurrency = 4;
+      let active = 0;
+
+      return new Promise((resolve)=>{
+        const tick = async () => {
+          while(active < concurrency && queue.length){
+            const el = queue.shift();
+            active++;
+
+            const title = el.getAttribute("data-title");
+            fetchPoster(title).then((url)=>{
+              if(url){
+                el.classList.add("hasPoster");
+                const bg = el.querySelector(".calBg");
+                if(bg) bg.style.backgroundImage = `url("${url}")`;
+              }
+            }).finally(()=>{
+              active--;
+              if(queue.length === 0 && active === 0) resolve();
+              else tick();
+            });
+          }
+        };
+        tick();
+      });
+    }
+
+    function posterHTML(title){
+      const safe = escapeAttr(title);
+      return `
+        <div class="posterWrap">
+          <div class="posterPh">poster</div>
+          <img class="poster" data-title="${safe}" alt="Poster for ${safe}" />
+        </div>
+      `;
+    }
+
+    function mutedCardHTML(title){
+      return `
+        <div class="card mutedCard">
+          <div class="muteRow">
+            <h2 class="title">${escapeHtml(title)}</h2>
+            <div class="muteActions">
+              <button class="smallBtn" data-mute="${escapeAttr(title)}">unmute</button>
+              <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function cardHTML(movie, today){
+      const title = movie.title || "Untitled";
+
+      if(mutedSet.has(title)){
+        return mutedCardHTML(title);
+      }
+
+      const next = getNextShowing(movie, today);
+      const last = getLastShowing(movie);
+      if(!next || !last) return "";
+
+      const nextLabel = formatNextLabel(next, today);
+
+      const endsIn = daysBetween(today, last);
+      let endText = "";
+      if(endsIn === 0) endText = "ends today";
+      else if(endsIn === 1) endText = "ends tomorrow";
+      else if(endsIn > 1) endText = `ends in ${endsIn} days`;
+      else endText = `ended`;
+
+      const { beads, monthTags } = buildBeads(movie, today);
+
+      let monthRow = "";
+      if(monthTags.length){
+        const shown = monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("");
+        const more = monthTags.length > 2 ? `<span class="monthTag">+${monthTags.length-2}</span>` : "";
+        monthRow = `<div class="monthRow">${shown}${more}</div>`;
+      }
+
+      const beadsHTML = beads.map(b => {
+        if(b.gap) return `<div class="gapDots" title="gap">···</div>`;
+        return `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`;
+      }).join("");
+
+      return `
+        <div class="card">
+          <div class="cardRow">
+            ${posterHTML(title)}
+            <div class="content">
+              <div class="titleRow">
+                <h2 class="title">${escapeHtml(title)}</h2>
+                <div class="badges">${badgeHTML(movie, today)}</div>
+              </div>
+
+              <div class="planRow">
+                <div class="planLine">
+                  <span class="planLabel">Next showing</span>
+                  <span class="planValue">${escapeHtml(nextLabel)}</span>
+                  <span class="planLabel">·</span>
+                  <span class="planLabel">${escapeHtml(endText)}</span>
+                </div>
+
+                <div class="actions">
+                  <button class="smallBtn" data-mute="${escapeAttr(title)}" title="Collapse this title">mute</button>
+                  <button class="smallBtn" data-hide="${escapeAttr(title)}" title="Hide this title">hide</button>
+                </div>
+              </div>
+
+              ${monthRow}
+              <div class="beads">${beadsHTML}</div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function attachHandlers(){
@@ -595,7 +1176,58 @@
       });
     }
 
-    /* ---------- CALENDAR RENDER ---------- */
+    /* ---------- modes ---------- */
+    let mode = localStorage.getItem(MODE_KEY) || "calendar";
+    function setMode(m){
+      mode = m;
+      localStorage.setItem(MODE_KEY, m);
+      render();
+    }
+    document.getElementById("modeShort").addEventListener("click", ()=>setMode("short"));
+    document.getElementById("modeList").addEventListener("click", ()=>setMode("list"));
+    document.getElementById("modeCal").addEventListener("click", ()=>setMode("calendar"));
+
+    /* ---------- sorting ---------- */
+    let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
+
+    function setSort(newSort){
+      state.sort = newSort;
+      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
+      render();
+    }
+    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
+
+    function sortList(list, today){
+      const arr = list.slice();
+
+      if(state.sort === "az"){
+        arr.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+      } else if(state.sort === "long"){
+        arr.sort((a,b) => (runCount(b) - runCount(a)) || (a.title||"").localeCompare(b.title||""));
+      } else if(state.sort === "short"){
+        arr.sort((a,b) => (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||""));
+      } else {
+        // plan
+        arr.sort((a,b) => {
+          const an = getNextShowing(a,today);
+          const bn = getNextShowing(b,today);
+          const ad = an ? daysBetween(today, an) : 9999;
+          const bd = bn ? daysBetween(today, bn) : 9999;
+
+          const aSoon = leavingSoon(a,today) ? 0 : 1;
+          const bSoon = leavingSoon(b,today) ? 0 : 1;
+
+          return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
+        });
+      }
+
+      if(mutedBottomEl.checked){
+        const unmuted = arr.filter(m => !mutedSet.has(m.title));
+        const muted = arr.filter(m => mutedSet.has(m.title));
+        return unmuted.concat(muted);
+      }
+      return arr;
+    }
 
     function startOfWeek(d){
       const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -622,16 +1254,20 @@
       return { dow, md };
     }
 
-    function calItemHTML(title, dotClass){
-      const safe = escapeHtml(title);
-      const attr = title.replaceAll('"','&quot;');
+    function calItemHTML(title, dotClass, isMuted){
+      const safeTitle = escapeHtml(title);
+      const attr = escapeAttr(title);
+      const mutedClass = isMuted ? " muted" : "";
 
       return `
-        <div class="calItem" title="${safe}">
+        <div class="calItem${mutedClass}" data-title="${attr}" title="${safeTitle}">
+          <div class="calBg"></div>
+          <div class="calShade"></div>
+
           <div class="dot ${dotClass}"></div>
-          <div class="calName">${safe}</div>
+          <div class="calName">${safeTitle}</div>
           <div class="calActions">
-            <div class="act" data-mute="${attr}" title="mute">−</div>
+            <div class="act" data-mute="${attr}" title="mute/unmute">−</div>
             <div class="act hide" data-hide="${attr}" title="hide">×</div>
           </div>
         </div>
@@ -639,7 +1275,6 @@
     }
 
     function renderCalendar(movies, today){
-      // build date->titles list for ONE WEEK view based on "today"
       let weekStart = startOfWeek(today);
 
       const controls = `
@@ -653,7 +1288,6 @@
         </div>
       `;
 
-      // map day ISO -> items
       const dayMap = new Map();
       for(let i=0;i<7;i++){
         const d = new Date(weekStart);
@@ -662,27 +1296,32 @@
         dayMap.set(key, []);
       }
 
-      // add movies for each listed date that falls inside the week
+      // add movies for each listed date inside the week
       for(const m of movies){
         if(!moviePassesFilters(m, today)) continue;
-        if(mutedSet.has(m.title)) continue; // keep muted out of calendar to reduce noise
 
         const dates = sortedDateObjs(m);
+        const muted = mutedSet.has(m.title);
+
         for(const dt of dates){
           const key = dt.toISOString().slice(0,10);
           if(dayMap.has(key)){
             const dotClass = leavingSoon(m, today) ? "soon" : (isShort(m) ? "short" : "");
-            dayMap.get(key).push({ title: m.title, dotClass });
+            dayMap.get(key).push({ title: m.title, dotClass, muted });
           }
         }
       }
 
-      // sort each day’s titles A-Z
+      // sort each day
       for(const [k, arr] of dayMap.entries()){
-        arr.sort((a,b)=>a.title.localeCompare(b.title));
+        arr.sort((a,b)=> a.title.localeCompare(b.title));
+        if(mutedBottomEl.checked){
+          const un = arr.filter(x => !x.muted);
+          const mu = arr.filter(x => x.muted);
+          dayMap.set(k, un.concat(mu));
+        }
       }
 
-      // render columns
       let cols = "";
       for(let i=0;i<7;i++){
         const d = new Date(weekStart);
@@ -696,7 +1335,7 @@
         const hidden = items.length - shown.length;
 
         const list = shown.length
-          ? shown.map(x => calItemHTML(x.title, x.dotClass)).join("")
+          ? shown.map(x => calItemHTML(x.title, x.dotClass, x.muted)).join("")
           : `<div style="opacity:.55;font-size:12px;padding:6px 2px;">nothing</div>`;
 
         const more = hidden > 0 ? `<div class="moreLink" data-more="${key}">+${hidden} more</div>` : "";
@@ -718,12 +1357,11 @@
       out.innerHTML = controls + `<div class="calGrid">${cols}</div>`;
       attachHandlers();
 
-      // hook week nav with a stored offset
-      let wkOffset = parseInt(localStorage.getItem("kalispell_week_offset_v6") || "0", 10);
-
+      // week nav
+      let wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
       function setWeekOffset(newOffset){
         wkOffset = newOffset;
-        localStorage.setItem("kalispell_week_offset_v6", String(wkOffset));
+        localStorage.setItem(WEEK_KEY, String(wkOffset));
         const t = getToday();
         t.setDate(t.getDate() + (wkOffset * 7));
         renderCalendar(state.movies, t);
@@ -732,7 +1370,7 @@
       document.getElementById("wkPrev").addEventListener("click", ()=>setWeekOffset(wkOffset - 1));
       document.getElementById("wkNext").addEventListener("click", ()=>setWeekOffset(wkOffset + 1));
       document.getElementById("wkToday").addEventListener("click", ()=>{
-        localStorage.setItem("kalispell_week_offset_v6", "0");
+        localStorage.setItem(WEEK_KEY, "0");
         renderCalendar(state.movies, getToday());
       });
 
@@ -742,41 +1380,59 @@
           const dayKey = el.getAttribute("data-more");
           const body = document.querySelector(`.dayBody[data-day="${dayKey}"]`);
           const all = dayMap.get(dayKey);
-          body.innerHTML = all.map(x => calItemHTML(x.title, x.dotClass)).join("");
+          body.innerHTML = all.map(x => calItemHTML(x.title, x.dotClass, x.muted)).join("");
           attachHandlers();
+          hydrateCalendarBackgrounds();
         });
       });
+
+      hydrateCalendarBackgrounds();
     }
 
-    /* ---------- LIST / SHORT PLACEHOLDERS (so buttons still do something) ---------- */
+    function renderListOrShort(kind, today){
+      // kind: "list" or "short"
+      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
+      const sorted = sortList(filtered, today);
 
-    function renderPlaceholder(kind){
-      out.innerHTML = `<div class="error">${escapeHtml(kind + " mode is still here, but calendar is your main weapon right now. Click Calendar.")}</div>`;
+      if(sorted.length === 0){
+        out.innerHTML = `<div class="error">Nothing to show.</div>`;
+        return;
+      }
+
+      // short mode: if you want, we can later tighten these cards more.
+      out.innerHTML = `<div class="grid">${sorted.map(m => cardHTML(m, today)).join("")}</div>`;
+      attachHandlers();
+      hydratePostersInList();
     }
 
     function render(){
       const today = getToday();
+
       meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
-      // apply sort to keep calendar consistent if you later use list mode
-      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
-      if(filtered.length === 0){
-        out.innerHTML = `<div class="error">Nothing to show. Everything is hidden or filters are too intense.</div>`;
-        return;
+      if(mgrEl.classList.contains("open")){
+        renderMgr();
       }
 
       if(mode === "calendar"){
-        // apply week offset
-        const wkOffset = parseInt(localStorage.getItem("kalispell_week_offset_v6") || "0", 10);
+        const wkOffset = parseInt(localStorage.getItem(WEEK_KEY) || "0", 10);
         const t = getToday();
         t.setDate(t.getDate() + (wkOffset * 7));
         renderCalendar(state.movies, t);
         return;
       }
 
-      if(mode === "list") return renderPlaceholder("List");
-      if(mode === "short") return renderPlaceholder("Short");
-      return renderCalendar(state.movies, today);
+      if(mode === "list"){
+        renderListOrShort("list", today);
+        return;
+      }
+
+      if(mode === "short"){
+        renderListOrShort("short", today);
+        return;
+      }
+
+      renderCalendar(state.movies, today);
     }
 
     async function load(){
@@ -824,10 +1480,17 @@
 
     document.getElementById("refresh").addEventListener("click", load);
     document.getElementById("debug").addEventListener("click", debugFetch);
+
     onlySoonEl.addEventListener("change", render);
     groupedEl.addEventListener("change", render);
     mutedBottomEl.addEventListener("change", render);
+    calPosterBgEl.addEventListener("change", render);
     qEl.addEventListener("input", render);
+
+    // persist mode buttons
+    if(!localStorage.getItem(MODE_KEY)){
+      localStorage.setItem(MODE_KEY, mode);
+    }
 
     // init
     load();
