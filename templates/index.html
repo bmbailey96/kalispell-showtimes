@@ -5,97 +5,295 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kalispell Showtimes</title>
   <style>
-    body {
-      margin: 0;
-      padding: 24px;
+    :root{
+      --bg:#0b0b0f;
+      --panel:#10101a;
+      --panel2:#141421;
+      --border:#23233a;
+      --text:#eaeaf2;
+      --muted:rgba(234,234,242,.72);
+      --muted2:rgba(234,234,242,.55);
+      --bead:#161625;
+      --beadBorder:#2b2b49;
+      --beadDim:#0f0f19;
+      --accent:#9ad1ff;
+
+      /* leaving soon badge */
+      --warnBg:#2a0f16;
+      --warnBorder:#5a1b2a;
+      --warnText:#ffd6de;
+
+      /* today bead */
+      --todayBg:#1d2a3a;
+      --todayBorder:#6bb8ff;
+
+      /* subtle shadow */
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      padding:24px;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: #0b0b0f;
-      color: #eaeaf2;
+      background:var(--bg);
+      color:var(--text);
     }
-    .wrap { max-width: 900px; margin: 0 auto; }
-    h1 { margin: 0 0 10px; font-size: 26px; letter-spacing: 0.2px; }
-    .sub { opacity: 0.8; margin-bottom: 18px; }
-    .controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin: 16px 0 18px;
-      padding: 14px;
-      background: #141421;
-      border: 1px solid #22223a;
-      border-radius: 10px;
+    .wrap{ max-width:1100px; margin:0 auto; }
+    h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
+    .sub{ opacity:.8; margin-bottom:18px; max-width: 75ch; }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:16px 0 18px;
+      padding:14px;
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:12px;
+      box-shadow: var(--shadow);
     }
-    input[type="number"] {
-      width: 90px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #2b2b49;
-      background: #0f0f19;
-      color: #eaeaf2;
+
+    label{ opacity:.85; font-size:13px; }
+    input[type="number"]{
+      width:92px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--beadBorder);
+      background:var(--beadDim);
+      color:var(--text);
+      outline:none;
     }
-    button {
-      padding: 9px 12px;
-      border-radius: 8px;
-      border: 1px solid #2b2b49;
-      background: #1c1c2e;
-      color: #eaeaf2;
-      cursor: pointer;
+
+    .btn{
+      padding:9px 12px;
+      border-radius:10px;
+      border:1px solid var(--beadBorder);
+      background:#1c1c2e;
+      color:var(--text);
+      cursor:pointer;
+      user-select:none;
+      font-size:13px;
     }
-    button:hover { background: #23233a; }
-    .meta {
-      font-size: 13px;
-      opacity: 0.8;
-      margin: 10px 0 18px;
+    .btn:hover{ background:#23233a; }
+
+    .btn.primary{
+      border-color: rgba(154,209,255,.6);
+      background: rgba(154,209,255,.10);
     }
-    .card {
-      padding: 14px 14px;
-      border-radius: 12px;
-      border: 1px solid #22223a;
-      background: #11111b;
-      margin-bottom: 10px;
+
+    .btn.sort{
+      background:#161625;
     }
-    .title {
-      font-size: 16px;
-      font-weight: 650;
-      margin-bottom: 6px;
+    .btn.sort.active{
+      border-color: rgba(154,209,255,.7);
+      background: rgba(154,209,255,.14);
     }
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      font-size: 13px;
-      opacity: 0.9;
+
+    .toggle{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--beadBorder);
+      background:#161625;
+      cursor:pointer;
+      font-size:13px;
+      user-select:none;
     }
-    .pill {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid #2b2b49;
-      background: #0f0f19;
+    .toggle input{ accent-color: var(--accent); }
+
+    .meta{
+      font-size:13px;
+      opacity:.75;
+      margin:10px 0 18px;
+      white-space:pre-wrap;
     }
-    .error {
-      padding: 14px;
-      border-radius: 10px;
-      background: #2a0f16;
-      border: 1px solid #5a1b2a;
-      color: #ffd6de;
-      white-space: pre-wrap;
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
     }
-    a { color: #9ad1ff; }
+    @media (min-width: 860px){
+      .grid{
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card{
+      padding:14px 14px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .titleRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .title{
+      font-size:16px;
+      font-weight:650;
+      line-height:1.15;
+      margin:0;
+    }
+
+    .badges{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      max-width: 45%;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid var(--beadBorder);
+      background:#0f0f19;
+      font-size:12px;
+      opacity:.9;
+      white-space:nowrap;
+    }
+
+    .badge.warn{
+      background:var(--warnBg);
+      border-color:var(--warnBorder);
+      color:var(--warnText);
+      font-weight:600;
+    }
+
+    .badge.small{
+      opacity:.75;
+    }
+
+    .timeline{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .monthRow{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+      min-height: 18px;
+    }
+    .monthTag{
+      font-size:12px;
+      color: var(--muted2);
+      border:1px solid rgba(43,43,73,.65);
+      background: rgba(15,15,25,.55);
+      padding:2px 8px;
+      border-radius:999px;
+    }
+
+    .beads{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .bead{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:650;
+      letter-spacing:.2px;
+      background:var(--bead);
+      border:1px solid var(--beadBorder);
+      color: var(--text);
+      position:relative;
+    }
+    .bead.dim{
+      opacity:.35;
+      background: rgba(15,15,25,.6);
+    }
+    .bead.today{
+      background: var(--todayBg);
+      border-color: var(--todayBorder);
+      box-shadow: 0 0 0 2px rgba(107,184,255,.12);
+    }
+    .bead.future{
+      opacity: .95;
+    }
+
+    .bead:hover{
+      border-color: rgba(154,209,255,.65);
+      transform: translateY(-1px);
+      transition: transform .08s ease;
+    }
+
+    .footerRow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:10px;
+      font-size:12px;
+      color: var(--muted2);
+      flex-wrap:wrap;
+    }
+
+    .error{
+      padding:14px;
+      border-radius:12px;
+      background:var(--warnBg);
+      border:1px solid var(--warnBorder);
+      color:var(--warnText);
+      white-space:pre-wrap;
+      box-shadow: var(--shadow);
+    }
+
+    a{ color:var(--accent); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
-    <div class="sub">Pulls schedule data from TributeMovies and summarizes the date range each movie is listed for.</div>
+    <div class="sub">
+      A little timeline machine. Each bead is a day the movie is listed. Minimal color except when something is about to vanish.
+    </div>
 
     <div class="controls">
       <label for="days">Days ahead</label>
       <input id="days" type="number" min="1" max="365" value="60" />
-      <button id="go">Refresh</button>
-      <button id="debug">Debug fetch</button>
-      <span id="status" class="meta"></span>
+
+      <button class="btn primary" id="refresh">Refresh</button>
+      <button class="btn" id="debug">Debug fetch</button>
+
+      <span style="flex:1"></span>
+
+      <button class="btn sort active" data-sort="now">Now</button>
+      <button class="btn sort" data-sort="soon">Soon</button>
+      <button class="btn sort" data-sort="long">Long runs</button>
+      <button class="btn sort" data-sort="one">One night</button>
+      <button class="btn sort" data-sort="az">A Z</button>
+
+      <label class="toggle" title="Show only titles ending within 3 days">
+        <input id="onlySoon" type="checkbox" />
+        only leaving soon
+      </label>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -105,93 +303,280 @@
   <script>
     const out = document.getElementById("out");
     const meta = document.getElementById("meta");
-    const statusEl = document.getElementById("status");
     const daysEl = document.getElementById("days");
+    const onlySoonEl = document.getElementById("onlySoon");
 
-    function setStatus(t) {
-      statusEl.textContent = t || "";
+    const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
+    let state = {
+      sort: "now",
+      movies: [],
+      generated_at: null,
+      source: null,
+      days_ahead: 60
+    };
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function parseISODate(s){
+      // s like "2026-01-12"
+      const [y,m,d] = s.split("-").map(Number);
+      return new Date(y, m-1, d);
+    }
+
+    function formatShortMonth(d){
+      return d.toLocaleString(undefined, { month: "short" });
+    }
+
+    function formatMonthTag(d){
+      // "Jan 2026"
+      const mon = d.toLocaleString(undefined, { month: "short" });
+      return `${mon} ${d.getFullYear()}`;
+    }
+
+    function addDays(dt, n){
+      const x = new Date(dt.getTime());
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+
+    function daysBetween(a, b){
+      // whole-day difference b - a
+      const ms = 24*60*60*1000;
+      const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((ub - ua)/ms);
     }
 
     function escapeHtml(s) {
-      return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+      return (s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
     }
 
-    function card(m) {
-      const start = m.first_date;
-      const end = m.last_date;
-      const until = m.days_until_start;
-      const run = m.run_length_days;
+    function setSort(newSort){
+      state.sort = newSort;
+      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
+      render();
+    }
 
-      let untilText = "";
-      if (until === 0) untilText = "starts today";
-      else if (until === 1) untilText = "starts tomorrow";
-      else if (until > 1) untilText = `starts in ${until} days`;
-      else untilText = `started ${Math.abs(until)} days ago`;
+    sortButtons.forEach(btn => {
+      btn.addEventListener("click", () => setSort(btn.dataset.sort));
+    });
+
+    onlySoonEl.addEventListener("change", render);
+
+    async function load(){
+      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
+      daysEl.value = String(days);
+
+      out.innerHTML = "";
+      meta.textContent = "Loading…";
+
+      try{
+        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
+        const data = await res.json();
+
+        if(!res.ok || data.error){
+          meta.textContent = "";
+          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\\n\\nDebug:\\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
+          return;
+        }
+
+        state.movies = data.movies || [];
+        state.generated_at = data.generated_at;
+        state.source = data.source;
+        state.days_ahead = data.days_ahead;
+
+        render();
+      }catch(e){
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+      }
+    }
+
+    async function debugFetch(){
+      out.innerHTML = "";
+      meta.textContent = "Running debug…";
+      try{
+        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
+        const data = await res.json();
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+      }catch(e){
+        meta.textContent = "";
+        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", load);
+    document.getElementById("debug").addEventListener("click", debugFetch);
+
+    function leavingSoon(movie, today){
+      const last = parseISODate(movie.last_date);
+      const daysLeft = daysBetween(today, last);
+      return daysLeft <= 3; // includes negative if it already ended, but those won't usually show
+    }
+
+    function sortMovies(movies){
+      const today = new Date();
+      const list = movies.slice();
+
+      if(state.sort === "az"){
+        list.sort((a,b) => (a.title || "").localeCompare(b.title || ""));
+        return list;
+      }
+
+      if(state.sort === "one"){
+        list.sort((a,b) => (a.run_length_days - b.run_length_days) || (a.days_until_start - b.days_until_start) || (a.title||"").localeCompare(b.title||""));
+        return list;
+      }
+
+      if(state.sort === "long"){
+        list.sort((a,b) => (b.run_length_days - a.run_length_days) || (a.days_until_start - b.days_until_start) || (a.title||"").localeCompare(b.title||""));
+        return list;
+      }
+
+      if(state.sort === "soon"){
+        // soon = starting soon (future soon first), then currently showing
+        list.sort((a,b) => {
+          const af = a.days_until_start;
+          const bf = b.days_until_start;
+          const aKey = (af < 0) ? 9999 : af; // past starts go last
+          const bKey = (bf < 0) ? 9999 : bf;
+          return (aKey - bKey) || (a.run_length_days - b.run_length_days) || (a.title||"").localeCompare(b.title||"");
+        });
+        return list;
+      }
+
+      // default "now": currently showing first (days_until_start <= 0), then upcoming soonest
+      list.sort((a,b) => {
+        const aNow = a.days_until_start <= 0 ? 0 : 1;
+        const bNow = b.days_until_start <= 0 ? 0 : 1;
+        return (aNow - bNow) ||
+               (a.days_until_start - b.days_until_start) ||
+               (a.run_length_days - b.run_length_days) ||
+               (a.title||"").localeCompare(b.title||"");
+      });
+      return list;
+    }
+
+    function buildBeads(movie, today){
+      const first = parseISODate(movie.first_date);
+      const last = parseISODate(movie.last_date);
+      const totalDays = daysBetween(first, last) + 1;
+
+      const beads = [];
+      const monthTags = [];
+
+      let current = new Date(first.getTime());
+      let lastMonth = null;
+
+      for(let i=0; i<totalDays; i++){
+        const y = current.getFullYear();
+        const m = current.getMonth();
+        const d = current.getDate();
+
+        const isToday = (y === today.getFullYear() && m === today.getMonth() && d === today.getDate());
+        const isPast = (daysBetween(current, today) < 0); // current < today
+        const isFuture = (daysBetween(today, current) > 0);
+
+        const monthKey = `${y}-${m}`;
+        if(monthKey !== lastMonth){
+          monthTags.push(formatMonthTag(current));
+          lastMonth = monthKey;
+        }
+
+        beads.push({
+          label: String(d),
+          title: `${formatShortMonth(current)} ${d}, ${y}`,
+          cls: "bead" + (isPast ? " dim" : (isToday ? " today" : (isFuture ? " future" : "")))
+        });
+
+        current = addDays(current, 1);
+      }
+
+      return { beads, monthTags, totalDays };
+    }
+
+    function cardHTML(movie){
+      const today = new Date();
+
+      const soon = leavingSoon(movie, today);
+      const onlySoon = onlySoonEl.checked;
+      if(onlySoon && !soon) return "";
+
+      const first = parseISODate(movie.first_date);
+      const last = parseISODate(movie.last_date);
+
+      const daysLeft = daysBetween(today, last);
+      const startsIn = movie.days_until_start;
+
+      const { beads, monthTags, totalDays } = buildBeads(movie, today);
+
+      let startText = "";
+      if(startsIn === 0) startText = "starts today";
+      else if(startsIn === 1) startText = "starts tomorrow";
+      else if(startsIn > 1) startText = `starts in ${startsIn} days`;
+      else startText = `already started`;
+
+      let endText = "";
+      if(daysLeft === 0) endText = "ends today";
+      else if(daysLeft === 1) endText = "ends tomorrow";
+      else if(daysLeft > 1) endText = `ends in ${daysLeft} days`;
+      else endText = `ended ${Math.abs(daysLeft)} days ago`;
+
+      const badgeSoon = soon ? `<span class="badge warn">LEAVING SOON</span>` : "";
+      const badgeRun = `<span class="badge small">${totalDays} day${totalDays===1?"":"s"}</span>`;
+
+      // Month tags: show up to 2, then +N
+      let monthRow = "";
+      if(monthTags.length){
+        const shown = monthTags.slice(0,2).map(t => `<span class="monthTag">${escapeHtml(t)}</span>`).join("");
+        const more = monthTags.length > 2 ? `<span class="monthTag">+${monthTags.length-2}</span>` : "";
+        monthRow = `<div class="monthRow">${shown}${more}</div>`;
+      }
+
+      const beadsHTML = beads.map(b => `<div class="${b.cls}" title="${escapeHtml(b.title)}">${escapeHtml(b.label)}</div>`).join("");
 
       return `
         <div class="card">
-          <div class="title">${escapeHtml(m.title)}</div>
-          <div class="row">
-            <span class="pill">${start} → ${end}</span>
-            <span class="pill">${untilText}</span>
-            <span class="pill">${run} listed day${run === 1 ? "" : "s"}</span>
+          <div class="titleRow">
+            <h2 class="title">${escapeHtml(movie.title)}</h2>
+            <div class="badges">
+              ${badgeSoon}
+              ${badgeRun}
+            </div>
+          </div>
+
+          <div class="timeline">
+            ${monthRow}
+            <div class="beads">${beadsHTML}</div>
+          </div>
+
+          <div class="footerRow">
+            <span>${escapeHtml(startText)}</span>
+            <span>${escapeHtml(endText)}</span>
           </div>
         </div>
       `;
     }
 
-    async function load() {
-      const days = Math.max(1, Math.min(365, parseInt(daysEl.value || "60", 10)));
-      daysEl.value = String(days);
+    function render(){
+      const today = new Date();
+      const movies = sortMovies(state.movies);
 
-      setStatus("Loading…");
-      out.innerHTML = "";
-      meta.textContent = "";
+      meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
 
-      try {
-        const res = await fetch(`/api/showtimes?days=${days}`, { cache: "no-store" });
-        const data = await res.json();
+      const htmlCards = movies.map(cardHTML).filter(Boolean).join("");
 
-        if (!res.ok || data.error) {
-          setStatus("");
-          out.innerHTML = `<div class="error">${escapeHtml("Error: " + (data.error || res.statusText) + "\n\nDebug:\n" + JSON.stringify(data.debug || {}, null, 2))}</div>`;
-          return;
-        }
-
-        setStatus("");
-        meta.textContent = `Generated: ${data.generated_at}   Source: ${data.source}   Days ahead: ${data.days_ahead}`;
-
-        if (!data.movies || data.movies.length === 0) {
-          out.innerHTML = `<div class="error">No movies found. This usually means the page layout changed or the fetch got blocked.</div>`;
-          return;
-        }
-
-        out.innerHTML = data.movies.map(card).join("");
-      } catch (e) {
-        setStatus("");
-        out.innerHTML = `<div class="error">${escapeHtml("Request failed: " + e)}</div>`;
+      if(!htmlCards){
+        out.innerHTML = `<div class="error">Nothing to show with current filters. Try turning off “only leaving soon”.</div>`;
+        return;
       }
+
+      out.innerHTML = `<div class="grid">${htmlCards}</div>`;
     }
-
-    async function debugFetch() {
-      setStatus("Running debug…");
-      out.innerHTML = "";
-      meta.textContent = "";
-
-      try {
-        const res = await fetch(`/api/debug_raw`, { cache: "no-store" });
-        const data = await res.json();
-        setStatus("");
-
-        out.innerHTML = `<div class="error">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
-      } catch (e) {
-        setStatus("");
-        out.innerHTML = `<div class="error">${escapeHtml("Debug failed: " + e)}</div>`;
-      }
-    }
-
-    document.getElementById("go").addEventListener("click", load);
-    document.getElementById("debug").addEventListener("click", debugFetch);
 
     load();
   </script>
