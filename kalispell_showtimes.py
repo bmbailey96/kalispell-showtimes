@@ -43,6 +43,7 @@ HEADERS = {
 }
 
 CACHE_TTL_SECONDS = 180
+
 DATE_LABEL_RE = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s([A-Za-z]{3})\s(\d{1,2}):$")
 MONTHS = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
@@ -186,6 +187,8 @@ def build_schedule(days_ahead: int, spans: Dict[str, Dict]) -> List[dict]:
     for _norm, info in spans.items():
         dates_set = info.get("dates") or set()
         lower = today - timedelta(days=7)
+
+        # Keep only dates near our window, then sort
         filtered = sorted([d for d in dates_set if lower <= d <= horizon])
         if not filtered:
             continue
@@ -195,8 +198,9 @@ def build_schedule(days_ahead: int, spans: Dict[str, Dict]) -> List[dict]:
             "title": info.get("display_title") or "Untitled",
             "first_date": first.isoformat(),
             "last_date": last.isoformat(),
+            "dates": [d.isoformat() for d in filtered],  # <-- THIS IS THE FIX
             "days_until_start": (first - today).days,
-            "run_length_days": len(filtered),
+            "run_length_days": len(filtered),            # actual number of listed dates
         })
 
     result.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
@@ -288,6 +292,5 @@ def index():
     return render_template("index.html")
 
 
-# Local only, Render uses gunicorn
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
