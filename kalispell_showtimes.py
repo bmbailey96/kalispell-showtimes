@@ -1,5 +1,8 @@
+import os
 import re
+import time
 import cloudscraper
+import requests
 from datetime import date, datetime, timedelta
 from typing import Optional, Dict, List, Tuple
 
@@ -51,6 +54,15 @@ MONTHS = {
 }
 
 MOUNTAIN_TZ = ZoneInfo("America/Denver") if ZoneInfo else None
+
+# TMDB
+TMDB_API_KEY = os.getenv("TMDB_API_KEY", "").strip()
+TMDB_IMG_BASE = "https://image.tmdb.org/t/p/"
+TMDB_POSTER_SIZE = "w342"  # good balance: sharp but not huge
+
+# Caches (in-memory)
+_poster_cache: Dict[str, Dict] = {}
+POSTER_CACHE_TTL_SECONDS = 7 * 24 * 3600  # 7 days
 
 
 def now_local() -> datetime:
@@ -188,7 +200,6 @@ def build_schedule(days_ahead: int, spans: Dict[str, Dict]) -> List[dict]:
         dates_set = info.get("dates") or set()
         lower = today - timedelta(days=7)
 
-        # Keep only dates near our window, then sort
         filtered = sorted([d for d in dates_set if lower <= d <= horizon])
         if not filtered:
             continue
@@ -198,9 +209,9 @@ def build_schedule(days_ahead: int, spans: Dict[str, Dict]) -> List[dict]:
             "title": info.get("display_title") or "Untitled",
             "first_date": first.isoformat(),
             "last_date": last.isoformat(),
-            "dates": [d.isoformat() for d in filtered],  # <-- THIS IS THE FIX
+            "dates": [d.isoformat() for d in filtered],  # actual listed days only
             "days_until_start": (first - today).days,
-            "run_length_days": len(filtered),            # actual number of listed dates
+            "run_length_days": len(filtered),
         })
 
     result.sort(key=lambda x: (x["days_until_start"], x["run_length_days"], x["title"]))
@@ -244,6 +255,114 @@ def get_cached_spans() -> Tuple[Optional[Dict[str, Dict]], Optional[str]]:
     return spans, None
 
 
+def _poster_cache_get(key: str) -> Optional[Dict]:
+    v = _poster_cache.get(key)
+    if not v:
+        return None
+    if (time.time() - v.get("ts", 0)) > POSTER_CACHE_TTL_SECONDS:
+        _poster_cache.pop(key, None)
+        return None
+    return v
+
+
+def _poster_cache_set(key: str, payload: Dict) -> None:
+    payload = dict(payload)
+    payload["ts"] = time.time()
+    _poster_cache[key] = payload
+
+
+def _clean_title_for_search(title: str) -> str:
+    t = (title or "").strip()
+
+    # Remove common prefixes that will wreck search results
+    # e.g., "The Metropolitan Opera: Cinderella Encore"
+    t = re.sub(r"^(The Metropolitan Opera:\s*)", "", t, flags=re.IGNORECASE)
+
+    # Remove "Encore" tag (often not in TMDB title)
+    t = re.sub(r"\bEncore\b", "", t, flags=re.IGNORECASE).strip()
+
+    return t
+
+
+def tmdb_search_best_poster(title: str) -> Dict:
+    """
+    Returns:
+      { ok, poster_url, tmdb_id, media_type, matched_title, error }
+    """
+    if not TMDB_API_KEY:
+        return {"ok": False, "poster_url": None, "error": "TMDB_API_KEY not set"}
+
+    q = _clean_title_for_search(title)
+    if not q:
+        return {"ok": False, "poster_url": None, "error": "Empty title"}
+
+    cache_key = normalize_title(q)
+    cached = _poster_cache_get(cache_key)
+    if cached:
+        return cached
+
+    try:
+        # Use multi search so weird titles might still resolve (movie / tv)
+        url = "https://api.themoviedb.org/3/search/multi"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "query": q,
+            "include_adult": "false",
+            "language": "en-US",
+            "page": 1
+        }
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code != 200:
+            payload = {"ok": False, "poster_url": None, "error": f"TMDB HTTP {r.status_code}"}
+            _poster_cache_set(cache_key, payload)
+            return payload
+
+        data = r.json() or {}
+        results = data.get("results") or []
+
+        # Pick the best result with a poster_path
+        # Prefer movies, then tv. Prefer higher popularity if available.
+        def score(item: Dict) -> Tuple[int, float]:
+            mt = item.get("media_type")
+            has_poster = 1 if item.get("poster_path") else 0
+            type_bonus = 2 if mt == "movie" else (1 if mt == "tv" else 0)
+            pop = float(item.get("popularity") or 0.0)
+            return (has_poster * 10 + type_bonus, pop)
+
+        best = None
+        best_score = (-1, -1.0)
+        for it in results[:20]:
+            sc = score(it)
+            if sc > best_score and it.get("poster_path"):
+                best = it
+                best_score = sc
+
+        if not best:
+            payload = {"ok": False, "poster_url": None, "error": "No TMDB match with poster"}
+            _poster_cache_set(cache_key, payload)
+            return payload
+
+        poster_path = best.get("poster_path")
+        poster_url = f"{TMDB_IMG_BASE}{TMDB_POSTER_SIZE}{poster_path}"
+
+        matched_title = best.get("title") or best.get("name") or q
+        payload = {
+            "ok": True,
+            "poster_url": poster_url,
+            "tmdb_id": best.get("id"),
+            "media_type": best.get("media_type"),
+            "matched_title": matched_title,
+            "error": None
+        }
+        _poster_cache_set(cache_key, payload)
+        return payload
+
+    except Exception as e:
+        payload = {"ok": False, "poster_url": None, "error": f"TMDB error: {str(e)}"}
+        _poster_cache_set(cache_key, payload)
+        return payload
+
+
 app = Flask(__name__)
 
 
@@ -285,6 +404,17 @@ def api_showtimes():
         "movies": build_schedule(days, spans),
         "source": "TributeMovies"
     })
+
+
+@app.route("/api/poster")
+def api_poster():
+    # Example: /api/poster?title=Iron%20Lung
+    title = (request.args.get("title") or "").strip()
+    if not title:
+        return jsonify({"ok": False, "poster_url": None, "error": "Missing title"}), 400
+
+    payload = tmdb_search_best_poster(title)
+    return jsonify(payload)
 
 
 @app.route("/")
