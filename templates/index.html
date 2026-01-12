@@ -61,9 +61,7 @@
       min-height: 54px;
     }
 
-    .bar.views{
-      flex: 0 0 auto;
-    }
+    .bar.views{ flex: 0 0 auto; }
     .bar.controls{
       flex: 1 1 auto;
       min-width: 320px;
@@ -109,9 +107,7 @@
       border-color: rgba(154,209,255,.6);
       background: rgba(154,209,255,.10);
     }
-    .btn.pill{
-      background:#161625;
-    }
+    .btn.pill{ background:#161625; }
     .btn.pill.active{
       border-color: rgba(154,209,255,.7);
       background: rgba(154,209,255,.14);
@@ -267,26 +263,27 @@
     @media (min-width: 980px){
       .grid{ grid-template-columns: 1fr 1fr; }
     }
-    /* 3 columns on wide screens */
     @media (min-width: 1400px){
       .grid{ grid-template-columns: 1fr 1fr 1fr; }
     }
 
     .card{
-      padding:14px 14px 12px;
+      padding:12px 12px 10px;
       border-radius:14px;
       border:1px solid var(--border);
       background:var(--panel);
       box-shadow: var(--shadow);
       position:relative;
       overflow:hidden;
+      cursor:pointer;
+      user-select:none;
     }
     .cardRow{ display:flex; gap:12px; align-items:flex-start; }
 
     .posterWrap{
-      width: 62px;
-      min-width: 62px;
-      height: 92px;
+      width: 58px;
+      min-width: 58px;
+      height: 86px;
       border-radius: 10px;
       overflow:hidden;
       border: 1px solid rgba(43,43,73,.7);
@@ -294,7 +291,6 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      cursor:pointer;
       user-select:none;
     }
     .poster{
@@ -331,11 +327,13 @@
     }
     .title{
       font-size:16px;
-      font-weight:900;
+      font-weight:950;
       line-height:1.12;
       margin:0;
-      cursor:pointer;
-      user-select:none;
+      min-width:0;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
     }
 
     .badges{
@@ -364,45 +362,48 @@
     .badge.short{ background:#201d10; border-color:#5b4e1f; color:#ffe6a6; }
     .badge.small{ opacity:.75; font-weight:650; }
 
-    .planRow{
+    /* Tight card actions live at top-right but small */
+    .actions{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .act{
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(43,43,73,.75);
+      background: rgba(0,0,0,.18);
+      color: rgba(234,234,242,.78);
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin: 6px 0 10px;
-      flex-wrap:wrap;
-    }
-    .planLine{
-      font-size: 13px;
-      color: var(--muted);
-      display:flex;
-      gap: 8px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    .planLabel{ color: var(--muted2); }
-    .planValue{ font-weight: 900; color: var(--text); }
-
-    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
-    .smallBtn{
-      border: 1px solid rgba(43,43,73,.8);
-      background: rgba(15,15,25,.55);
-      color: var(--muted);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
+      justify-content:center;
       cursor:pointer;
       user-select:none;
-      line-height: 1;
-      white-space:nowrap;
+      font-weight: 950;
+      line-height:1;
+      flex: 0 0 auto;
     }
-    .smallBtn:hover{
-      border-color: rgba(154,209,255,.5);
+    .act:hover{
       color: var(--text);
+      border-color: rgba(154,209,255,.55);
+      background: rgba(154,209,255,.10);
+    }
+    .act.hide:hover{
+      border-color: rgba(255,120,150,.55);
+      background: rgba(255,120,150,.10);
     }
 
-    /* FIX: Month label spacing */
-    .monthRow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-height: 18px; margin-bottom: 6px; }
+    /* Month label spacing */
+    .monthRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      min-height: 18px;
+      margin: 0 0 6px;
+    }
     .monthTag{
       font-size:12px;
       color: var(--muted2);
@@ -418,7 +419,7 @@
       width:34px; height:34px;
       border-radius:999px;
       display:flex; align-items:center; justify-content:center;
-      font-size:12px; font-weight:900;
+      font-size:12px; font-weight:950;
       letter-spacing:.2px;
       background:var(--bead);
       border:1px solid var(--beadBorder);
@@ -442,11 +443,12 @@
       user-select:none;
     }
 
-    /* muted collapse in list view */
+    /* muted collapse in list view (super minimal) */
     .mutedCard{
       padding: 10px 12px;
-      opacity: .35;
+      opacity: .33;
       filter: saturate(.55);
+      cursor: default;
     }
     .mutedCard .muteRow{
       display:flex;
@@ -454,7 +456,7 @@
       justify-content:space-between;
       gap:10px;
     }
-    .mutedCard .title{ font-size: 14px; cursor: default; }
+    .mutedCard .title{ font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
 
     /* ---------- CALENDAR MODE ---------- */
     .calTop{
@@ -467,7 +469,7 @@
     }
     .calTitle{
       font-size: 18px;
-      font-weight: 900;
+      font-weight: 950;
       margin: 0;
     }
     .calNav{ display:flex; align-items:center; gap:10px; }
@@ -483,7 +485,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight: 900;
+      font-weight: 950;
       user-select:none;
     }
     .iconBtn:hover{
@@ -497,7 +499,7 @@
       background: rgba(15,15,25,.55);
       color: var(--text);
       cursor:pointer;
-      font-weight: 800;
+      font-weight: 900;
     }
     .todayBtn:hover{
       border-color: rgba(154,209,255,.55);
@@ -533,14 +535,14 @@
     }
     .dayDow{
       font-size: 12px;
-      font-weight: 900;
+      font-weight: 950;
       letter-spacing: .5px;
       opacity: .7;
       text-transform: uppercase;
     }
     .dayDate{
       font-size: 14px;
-      font-weight: 900;
+      font-weight: 950;
       opacity: .9;
     }
 
@@ -588,7 +590,7 @@
     .calName{
       flex: 1 1 auto;
       min-width: 0;
-      font-weight: 900;
+      font-weight: 950;
       font-size: 13px;
       line-height: 1.1;
       white-space: nowrap;
@@ -607,7 +609,7 @@
       position: relative;
       z-index: 2;
     }
-    .act{
+    .actCal{
       width: 26px; height: 26px;
       border-radius: 9px;
       border: 1px solid rgba(43,43,73,.75);
@@ -618,16 +620,16 @@
       justify-content:center;
       cursor:pointer;
       user-select:none;
-      font-weight: 900;
+      font-weight: 950;
       line-height: 1;
       text-shadow:none;
     }
-    .act:hover{
+    .actCal:hover{
       color: var(--text);
       border-color: rgba(154,209,255,.55);
       background: rgba(154,209,255,.10);
     }
-    .act.hide:hover{
+    .actCal.hide:hover{
       border-color: rgba(255,120,150,.55);
       background: rgba(255,120,150,.10);
     }
@@ -762,16 +764,14 @@
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
-    <div class="sub">Calendar is date based. Posters are just to make it feel like a real object instead of a spreadsheet hallucination.</div>
+    <div class="sub">List mode is now “scan mode.” All the planning words moved into the drawer. Tap a movie to open it.</div>
 
     <div class="topRow">
-      <!-- Views -->
       <div class="bar views">
         <button class="btn pill" id="modeCal">Calendar</button>
         <button class="btn pill" id="modeList">List</button>
       </div>
 
-      <!-- Controls -->
       <div class="bar controls">
         <label for="days">Days ahead</label>
         <input id="days" type="number" min="1" max="365" value="60" />
@@ -805,7 +805,6 @@
 
         <span class="spacer"></span>
 
-        <!-- Sort (no AZ) -->
         <button class="btn pill active" data-sort="plan">Plan</button>
         <button class="btn pill" data-sort="long">Long</button>
         <button class="btn pill" data-sort="short">Short</button>
@@ -895,10 +894,10 @@
     const drawerHideBtn = document.getElementById("drawerHide");
     const drawerCloseBtn = document.getElementById("drawerClose");
 
-    const HIDDEN_KEY = "kalispell_hidden_titles_v8";
-    const MUTED_KEY  = "kalispell_muted_titles_v8";
-    const MODE_KEY   = "kalispell_mode_v8";
-    const WEEK_KEY   = "kalispell_week_offset_v8";
+    const HIDDEN_KEY = "kalispell_hidden_titles_v9";
+    const MUTED_KEY  = "kalispell_muted_titles_v9";
+    const MODE_KEY   = "kalispell_mode_v9";
+    const WEEK_KEY   = "kalispell_week_offset_v9";
 
     function loadSet(key){
       try{
@@ -1220,33 +1219,21 @@
           <div class="muteRow">
             <h2 class="title">${escapeHtml(title)}</h2>
             <div class="actions">
-              <button class="smallBtn" data-mute="${escapeAttr(title)}">unmute</button>
-              <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
+              <div class="act" data-mute="${escapeAttr(title)}" title="unmute">+</div>
+              <div class="act hide" data-hide="${escapeAttr(title)}" title="hide">×</div>
             </div>
           </div>
         </div>
       `;
     }
 
+    /* TIGHT LIST CARD: no planRow, no “next showing” line */
     function cardHTML(movie, today){
       const title = movie.title || "Untitled";
 
       if(mutedSet.has(title)){
         return mutedCardHTML(title);
       }
-
-      const next = getNextShowing(movie, today);
-      const last = getLastShowing(movie);
-      if(!next || !last) return "";
-
-      const nextLabel = formatNextLabel(next, today);
-
-      const endsIn = daysBetween(today, last);
-      let endText = "";
-      if(endsIn === 0) endText = "ends today";
-      else if(endsIn === 1) endText = "ends tomorrow";
-      else if(endsIn > 1) endText = `ends in ${endsIn} days`;
-      else endText = `ended`;
 
       const { beads, monthTags } = buildBeads(movie, today);
 
@@ -1265,22 +1252,15 @@
             ${posterHTML(title)}
             <div class="content">
               <div class="titleRow">
-                <h2 class="title" data-open="${escapeAttr(title)}">${escapeHtml(title)}</h2>
-                <div class="badges">${badgeHTML(movie, today)}</div>
+                <h2 class="title" data-open="${escapeAttr(title)}" title="${escapeAttr(title)}">${escapeHtml(title)}</h2>
+                <div class="actions" onclick="event.stopPropagation()">
+                  <div class="act" data-mute="${escapeAttr(title)}" title="mute/unmute">−</div>
+                  <div class="act hide" data-hide="${escapeAttr(title)}" title="hide">×</div>
+                </div>
               </div>
 
-              <div class="planRow">
-                <div class="planLine">
-                  <span class="planLabel">Next showing</span>
-                  <span class="planValue">${escapeHtml(nextLabel)}</span>
-                  <span class="planLabel">·</span>
-                  <span class="planLabel">${escapeHtml(endText)}</span>
-                </div>
-
-                <div class="actions">
-                  <button class="smallBtn" data-mute="${escapeAttr(title)}">mute</button>
-                  <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
-                </div>
+              <div class="titleRow" style="margin-top:-2px; margin-bottom:10px;">
+                <div class="badges">${badgeHTML(movie, today)}</div>
               </div>
 
               ${monthRow}
@@ -1305,13 +1285,11 @@
         });
       });
 
-      // open drawer
       document.querySelectorAll("[data-open]").forEach(el=>{
         el.addEventListener("click", (ev)=>{
           const t = el.getAttribute("data-open");
           if(!t) return;
-          // don’t open if click was on a button
-          if(ev.target && (ev.target.matches("button") || ev.target.classList.contains("act") || ev.target.classList.contains("mini"))) return;
+          if(ev.target && (ev.target.classList.contains("act") || ev.target.classList.contains("mini"))) return;
           openDrawer(t);
         });
       });
@@ -1347,7 +1325,6 @@
       } else if(state.sort === "short"){
         arr.sort((a,b) => (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||""));
       } else {
-        // plan
         arr.sort((a,b) => {
           const an = getNextShowing(a,today);
           const bn = getNextShowing(b,today);
@@ -1369,7 +1346,7 @@
       return arr;
     }
 
-    /* ---------- Grouping (FIXED) ---------- */
+    /* ---------- Grouping ---------- */
     function splitGroups(movies, today){
       const now = [];
       const next = [];
@@ -1398,7 +1375,7 @@
     /* ---------- Calendar ---------- */
     function startOfWeek(d){
       const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      const dow = nd.getDay(); // 0 sun
+      const dow = nd.getDay();
       nd.setDate(nd.getDate() - dow);
       return nd;
     }
@@ -1428,8 +1405,8 @@
           <div class="dot ${dotClass}"></div>
           <div class="calName">${safeTitle}</div>
           <div class="calActions" onclick="event.stopPropagation()">
-            <div class="act" data-mute="${attr}" title="mute/unmute">−</div>
-            <div class="act hide" data-hide="${attr}" title="hide">×</div>
+            <div class="actCal" data-mute="${attr}" title="mute/unmute">−</div>
+            <div class="actCal hide" data-hide="${attr}" title="hide">×</div>
           </div>
         </div>
       `;
@@ -1558,18 +1535,12 @@
         return;
       }
 
-      // GROUPING FIX: actually apply it
       if(groupedEl.checked){
         const g = splitGroups(sorted, today);
-
-        const nowHTML = `<div class="grid">${g.now.map(m => cardHTML(m, today)).join("")}</div>`;
-        const nextHTML = `<div class="grid">${g.next.map(m => cardHTML(m, today)).join("")}</div>`;
-        const laterHTML = `<div class="grid">${g.later.map(m => cardHTML(m, today)).join("")}</div>`;
-
         out.innerHTML =
-          sectionHTML("Now", nowHTML) +
-          sectionHTML("Next 7 days", nextHTML) +
-          sectionHTML("Later", laterHTML);
+          sectionHTML("Now", `<div class="grid">${g.now.map(m => cardHTML(m, today)).join("")}</div>`) +
+          sectionHTML("Next 7 days", `<div class="grid">${g.next.map(m => cardHTML(m, today)).join("")}</div>`) +
+          sectionHTML("Later", `<div class="grid">${g.later.map(m => cardHTML(m, today)).join("")}</div>`);
       } else {
         out.innerHTML = `<div class="grid">${sorted.map(m => cardHTML(m, today)).join("")}</div>`;
       }
@@ -1588,7 +1559,6 @@
       drawerMuteBtn.textContent = mutedSet.has(title) ? "Unmute" : "Mute";
       drawerHideBtn.textContent = "Hide";
 
-      // find movie data
       const movie = state.movies.find(m => m.title === title);
       const today = getToday();
       if(movie){
@@ -1625,7 +1595,6 @@
 
       drawerBackdrop.classList.add("open");
 
-      // poster
       drawerPosterImg.src = "";
       const url = await fetchPoster(title);
       if(url) drawerPosterImg.src = url;
@@ -1660,7 +1629,6 @@
 
       if(mgrEl.classList.contains("open")) renderMgr();
 
-      // highlight active view buttons
       document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
       document.getElementById("modeList").classList.toggle("active", mode==="list");
 
@@ -1726,20 +1694,16 @@
     calPosterBgEl.addEventListener("change", render);
     qEl.addEventListener("input", render);
 
-    // init mode + sort
-    if(!localStorage.getItem(MODE_KEY)) localStorage.setItem(MODE_KEY, mode);
+    document.getElementById("manageBtn").addEventListener("click", openMgr);
+    document.getElementById("closeMgr").addEventListener("click", closeMgr);
 
     function initSortButtons(){
       sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === state.sort));
     }
     initSortButtons();
 
-    sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
-    function setSort(newSort){
-      state.sort = newSort;
-      sortButtons.forEach(b => b.classList.toggle("active", b.dataset.sort === newSort));
-      render();
-    }
+    document.getElementById("modeCal").classList.toggle("active", mode==="calendar");
+    document.getElementById("modeList").classList.toggle("active", mode==="list");
 
     // start
     load();
