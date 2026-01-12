@@ -21,7 +21,6 @@
 
       --shadow: 0 8px 24px rgba(0,0,0,.35);
 
-      /* badges */
       --warnBg:#2a0f16;
       --warnBorder:#5a1b2a;
       --warnText:#ffd6de;
@@ -38,11 +37,9 @@
       --oneBorder:#274a7a;
       --oneText:#cfe6ff;
 
-      /* today bead */
       --todayBg:#1d2a3a;
       --todayBorder:#6bb8ff;
 
-      /* section header */
       --sectionBg: rgba(20,20,33,.7);
     }
 
@@ -56,7 +53,7 @@
     }
     .wrap{ max-width:1240px; margin:0 auto; }
     h1{ margin:0 0 10px; font-size:26px; letter-spacing:.2px; }
-    .sub{ opacity:.8; margin-bottom:18px; max-width: 90ch; }
+    .sub{ opacity:.8; margin-bottom:18px; max-width: 95ch; }
 
     .controls{
       display:flex;
@@ -104,6 +101,7 @@
       user-select:none;
       font-size:13px;
       line-height:1;
+      white-space:nowrap;
     }
     .btn:hover{ background:#23233a; }
 
@@ -129,6 +127,7 @@
       cursor:pointer;
       font-size:13px;
       user-select:none;
+      white-space:nowrap;
     }
     .toggle input{ accent-color: var(--accent); }
 
@@ -225,10 +224,7 @@
       user-select:none;
     }
 
-    .content{
-      flex:1;
-      min-width: 0;
-    }
+    .content{ flex:1; min-width:0; }
 
     .titleRow{
       display:flex;
@@ -309,6 +305,7 @@
       cursor:pointer;
       user-select:none;
       line-height: 1;
+      white-space:nowrap;
     }
     .smallBtn:hover{
       border-color: rgba(154,209,255,.5);
@@ -386,15 +383,13 @@
       flex-wrap:wrap;
     }
 
-    /* ---------- MUTED: hard collapse ---------- */
+    /* MUTED: hard collapse */
     .mutedCard{
       padding: 10px 12px;
-      opacity: .38;
+      opacity: .35;
       filter: saturate(.55);
     }
-    .mutedCard .cardRow{
-      align-items:center;
-    }
+    .mutedCard .cardRow,
     .mutedCard .posterWrap,
     .mutedCard .badges,
     .mutedCard .planRow,
@@ -402,19 +397,16 @@
     .mutedCard .footerRow{
       display:none !important;
     }
-    .mutedCard .titleRow{
-      margin:0;
-    }
-    .mutedCard .title{
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: .2px;
-    }
     .mutedCard .muteRow{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
+    }
+    .mutedCard .title{
+      font-size: 14px;
+      font-weight: 800;
+      margin:0;
     }
     .mutedCard .muteActions{
       display:flex;
@@ -431,13 +423,124 @@
       white-space:pre-wrap;
       box-shadow: var(--shadow);
     }
+
+    /* ---------- CALENDAR MODE ---------- */
+    .calTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin: 12px 0 10px;
+      flex-wrap:wrap;
+    }
+    .calTitle{
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing:.2px;
+      opacity:.95;
+    }
+    .calGrid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:10px;
+    }
+    .calDay{
+      border:1px solid var(--border);
+      background: rgba(16,16,26,.85);
+      border-radius:12px;
+      padding:10px;
+      min-height: 140px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .calHead{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 8px;
+    }
+    .calDow{
+      font-size: 12px;
+      color: var(--muted2);
+      font-weight: 800;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+    }
+    .calNum{
+      font-size: 13px;
+      font-weight: 900;
+      opacity:.95;
+    }
+    .calNum.today{
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(107,184,255,.65);
+      background: rgba(107,184,255,.12);
+    }
+    .calList{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .chip{
+      border:1px solid rgba(43,43,73,.75);
+      background: rgba(15,15,25,.55);
+      border-radius: 10px;
+      padding: 6px 8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      cursor: default;
+    }
+    .chipTitle{
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.1;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chipDot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: rgba(234,234,242,.25);
+      flex: 0 0 auto;
+    }
+    .chipDot.soon{ background: #ff6b86; box-shadow: 0 0 0 2px rgba(255,107,134,.15); }
+    .chipDot.muted{ background: rgba(234,234,242,.18); }
+    .chip.muted{
+      opacity:.35;
+      filter:saturate(.55);
+    }
+    .chipRowBtns{
+      display:flex;
+      gap:6px;
+      flex: 0 0 auto;
+    }
+    .chipBtn{
+      border:1px solid rgba(43,43,73,.75);
+      background: rgba(15,15,25,.55);
+      color: var(--muted2);
+      border-radius: 9px;
+      padding: 4px 7px;
+      font-size: 11px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chipBtn:hover{
+      border-color: rgba(154,209,255,.5);
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Kalispell Showtimes</h1>
     <div class="sub">
-      Posters from TMDB. Mute collapses a title into a dim single-line row so it stops taking your attention.
+      Calendar mode is date based (not showtime times yet). If you want the full “4:45p” calendar later, we’ll upgrade the scraper.
     </div>
 
     <div class="controls">
@@ -459,12 +562,20 @@
         only leaving soon
       </label>
 
+      <label class="toggle" title="When enabled, muted titles render at the bottom of each section">
+        <input id="mutedBottom" type="checkbox" checked />
+        muted to bottom
+      </label>
+
       <span style="flex:1"></span>
 
       <button class="btn sort active" data-sort="plan">Plan</button>
       <button class="btn sort" data-sort="az">A Z</button>
       <button class="btn sort" data-sort="long">Long</button>
       <button class="btn sort" data-sort="short">Short</button>
+
+      <button class="btn sort active" id="viewList">List</button>
+      <button class="btn sort" id="viewCal">Calendar</button>
     </div>
 
     <div id="meta" class="meta"></div>
@@ -477,13 +588,16 @@
     const daysEl = document.getElementById("days");
     const onlySoonEl = document.getElementById("onlySoon");
     const groupedEl = document.getElementById("grouped");
+    const mutedBottomEl = document.getElementById("mutedBottom");
     const qEl = document.getElementById("q");
 
-    const sortButtons = Array.from(document.querySelectorAll(".btn.sort"));
+    const sortButtons = Array.from(document.querySelectorAll(".btn.sort")).filter(b => b.dataset.sort);
+    const viewListBtn = document.getElementById("viewList");
+    const viewCalBtn  = document.getElementById("viewCal");
 
     // ---------- persistence ----------
-    const HIDDEN_KEY = "kalispell_hidden_titles_v3";
-    const MUTED_KEY  = "kalispell_muted_titles_v3";
+    const HIDDEN_KEY = "kalispell_hidden_titles_v4";
+    const MUTED_KEY  = "kalispell_muted_titles_v4";
 
     function loadSet(key){
       try{
@@ -533,6 +647,13 @@
       return new Date(y, m-1, d);
     }
 
+    function dateKey(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const da = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${da}`;
+    }
+
     function daysBetween(a, b){
       const ms = 24*60*60*1000;
       const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
@@ -573,6 +694,8 @@
     }
 
     async function hydratePosters(){
+      if(state.view !== "list") return;
+
       const imgs = Array.from(document.querySelectorAll("img.poster[data-title]"));
       const queue = imgs.slice();
       const concurrency = 4;
@@ -715,25 +838,26 @@
 
       if(state.sort === "az"){
         arr.sort((a,b) => (a.title||"").localeCompare(b.title||""));
-        return arr;
-      }
-      if(state.sort === "long"){
+      } else if(state.sort === "long"){
         arr.sort((a,b) => (runCount(b) - runCount(a)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
-        return arr;
-      }
-      if(state.sort === "short"){
+      } else if(state.sort === "short"){
         arr.sort((a,b) => (runCount(a) - runCount(b)) || (nextDiff(a,today) - nextDiff(b,today)) || (a.title||"").localeCompare(b.title||""));
-        return arr;
+      } else {
+        // plan
+        arr.sort((a,b) => {
+          const ad = nextDiff(a,today);
+          const bd = nextDiff(b,today);
+          const aSoon = leavingSoon(a,today) ? 0 : 1;
+          const bSoon = leavingSoon(b,today) ? 0 : 1;
+          return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
+        });
       }
 
-      // plan: soonest next showing, then leaving soon, then shorter run
-      arr.sort((a,b) => {
-        const ad = nextDiff(a,today);
-        const bd = nextDiff(b,today);
-        const aSoon = leavingSoon(a,today) ? 0 : 1;
-        const bSoon = leavingSoon(b,today) ? 0 : 1;
-        return (ad - bd) || (aSoon - bSoon) || (runCount(a) - runCount(b)) || (a.title||"").localeCompare(b.title||"");
-      });
+      if(mutedBottomEl.checked){
+        const unmuted = arr.filter(m => !mutedSet.has(m.title));
+        const muted = arr.filter(m => mutedSet.has(m.title));
+        return unmuted.concat(muted);
+      }
       return arr;
     }
 
@@ -792,9 +916,7 @@
       return `
         <div class="card mutedCard">
           <div class="muteRow">
-            <div class="titleRow">
-              <h2 class="title">${escapeHtml(title)}</h2>
-            </div>
+            <h2 class="title">${escapeHtml(title)}</h2>
             <div class="muteActions">
               <button class="smallBtn" data-mute="${escapeAttr(title)}">unmute</button>
               <button class="smallBtn" data-hide="${escapeAttr(title)}">hide</button>
@@ -883,9 +1005,7 @@
       document.querySelectorAll("button[data-hide]").forEach(btn=>{
         btn.addEventListener("click", ()=>{
           const title = btn.getAttribute("data-hide");
-          hiddenSet.add(title);
-          saveSet(HIDDEN_KEY, hiddenSet);
-          render();
+          hideTitle(title);
         });
       });
       document.querySelectorAll("button[data-mute]").forEach(btn=>{
@@ -896,8 +1016,16 @@
       });
     }
 
-    // ---------- sort controls ----------
-    let state = { sort: "plan", movies: [], generated_at: null, source: null, days_ahead: 60 };
+    // ---------- sort / view controls ----------
+    let state = {
+      sort: "plan",
+      view: "list",
+      movies: [],
+      generated_at: null,
+      source: null,
+      days_ahead: 60,
+      calWeekStart: null
+    };
 
     function setSort(newSort){
       state.sort = newSort;
@@ -905,6 +1033,15 @@
       render();
     }
     sortButtons.forEach(btn => btn.addEventListener("click", () => setSort(btn.dataset.sort)));
+
+    function setView(v){
+      state.view = v;
+      viewListBtn.classList.toggle("active", v === "list");
+      viewCalBtn.classList.toggle("active", v === "cal");
+      render();
+    }
+    viewListBtn.addEventListener("click", ()=> setView("list"));
+    viewCalBtn.addEventListener("click", ()=> setView("cal"));
 
     // ---------- data ----------
     async function load(){
@@ -928,6 +1065,14 @@
         state.generated_at = data.generated_at;
         state.source = data.source;
         state.days_ahead = data.days_ahead;
+
+        // init calendar week start to current week (Sunday)
+        if(!state.calWeekStart){
+          const t = new Date();
+          const start = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+          start.setDate(start.getDate() - start.getDay());
+          state.calWeekStart = start;
+        }
 
         render();
       }catch(e){
@@ -954,6 +1099,7 @@
     document.getElementById("debug").addEventListener("click", debugFetch);
     onlySoonEl.addEventListener("change", render);
     groupedEl.addEventListener("change", render);
+    mutedBottomEl.addEventListener("change", render);
     qEl.addEventListener("input", render);
 
     function renderCards(movies, today){
@@ -962,15 +1108,9 @@
       return `<div class="grid">${html}</div>`;
     }
 
-    function moviePasses(m, today){
-      return moviePassesFilters(m, today);
-    }
-
-    function render(){
+    function renderList(){
       const today = new Date();
-      meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
-
-      const filtered = state.movies.filter(m => moviePasses(m, today));
+      const filtered = state.movies.filter(m => moviePassesFilters(m, today));
       if(filtered.length === 0){
         out.innerHTML = `<div class="error">Nothing to show. Either everything is hidden, or your filters/search are too spicy.</div>`;
         return;
@@ -1027,6 +1167,147 @@
 
       attachHandlers();
       hydratePosters();
+    }
+
+    function calWeekRangeTitle(start){
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      end.setDate(end.getDate() + 6);
+      const opts = { month: "short", day: "numeric" };
+      const a = start.toLocaleString(undefined, opts);
+      const b = end.toLocaleString(undefined, opts);
+      const y = end.getFullYear();
+      return `${a} – ${b}, ${y}`;
+    }
+
+    function buildCalendarMap(today){
+      // Map: dateKey -> array of movies on that date
+      const map = new Map();
+
+      for(const m of state.movies){
+        if(!moviePassesFilters(m, today)) continue;
+        if(!hasDates(m)) continue;
+
+        for(const iso of m.dates){
+          const dt = parseISODate(iso);
+          const k = dateKey(dt);
+          if(!map.has(k)) map.set(k, []);
+          map.get(k).push(m);
+        }
+      }
+
+      // Sort each day’s list with our same sort logic (plus muted-to-bottom behavior)
+      for(const [k, arr] of map.entries()){
+        map.set(k, sortList(arr, today));
+      }
+      return map;
+    }
+
+    function renderCalendar(){
+      const today = new Date();
+      const start = state.calWeekStart || (() => {
+        const t = new Date();
+        const s = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        s.setDate(s.getDate() - s.getDay());
+        return s;
+      })();
+
+      const map = buildCalendarMap(today);
+
+      const dows = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const days = [];
+
+      for(let i=0;i<7;i++){
+        const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        dt.setDate(dt.getDate() + i);
+        days.push(dt);
+      }
+
+      const top = `
+        <div class="calTop">
+          <div class="calTitle">${escapeHtml(calWeekRangeTitle(start))}</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn" id="calPrev">◀</button>
+            <button class="btn" id="calToday">Today</button>
+            <button class="btn" id="calNext">▶</button>
+          </div>
+        </div>
+      `;
+
+      const grid = `
+        <div class="calGrid">
+          ${days.map((dt, idx) => {
+            const k = dateKey(dt);
+            const list = map.get(k) || [];
+            const isToday = (dateKey(dt) === dateKey(today));
+            const numClass = isToday ? "calNum today" : "calNum";
+
+            const items = list.slice(0, 10).map(m => {
+              const title = m.title || "Untitled";
+              const soon = leavingSoon(m, today);
+              const isMuted = mutedSet.has(title);
+
+              return `
+                <div class="chip ${isMuted ? "muted" : ""}">
+                  <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                    <div class="chipDot ${soon ? "soon" : ""} ${isMuted ? "muted" : ""}" title="${soon ? "leaving soon" : ""}"></div>
+                    <div class="chipTitle" title="${escapeAttr(title)}">${escapeHtml(title)}</div>
+                  </div>
+                  <div class="chipRowBtns">
+                    <button class="chipBtn" data-mute="${escapeAttr(title)}">${isMuted ? "unmute" : "mute"}</button>
+                    <button class="chipBtn" data-hide="${escapeAttr(title)}">hide</button>
+                  </div>
+                </div>
+              `;
+            }).join("");
+
+            const more = list.length > 10 ? `<div style="margin-top:6px; font-size:12px; color: var(--muted2);">+${list.length-10} more</div>` : "";
+
+            return `
+              <div class="calDay">
+                <div class="calHead">
+                  <div class="calDow">${dows[idx]}</div>
+                  <div class="${numClass}">${dt.toLocaleString(undefined, { month:"short", day:"numeric" })}</div>
+                </div>
+                <div class="calList">${items || `<div style="color: var(--muted2); font-size:12px;">nothing</div>`}</div>
+                ${more}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      out.innerHTML = top + grid;
+
+      // calendar nav buttons
+      document.getElementById("calPrev").addEventListener("click", ()=>{
+        const s = state.calWeekStart;
+        const n = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        n.setDate(n.getDate() - 7);
+        state.calWeekStart = n;
+        render();
+      });
+      document.getElementById("calNext").addEventListener("click", ()=>{
+        const s = state.calWeekStart;
+        const n = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        n.setDate(n.getDate() + 7);
+        state.calWeekStart = n;
+        render();
+      });
+      document.getElementById("calToday").addEventListener("click", ()=>{
+        const t = new Date();
+        const s = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        s.setDate(s.getDate() - s.getDay());
+        state.calWeekStart = s;
+        render();
+      });
+
+      attachHandlers();
+    }
+
+    function render(){
+      meta.textContent = `Generated: ${state.generated_at}   Source: ${state.source}   Days ahead: ${state.days_ahead}`;
+      if(state.view === "cal") renderCalendar();
+      else renderList();
     }
 
     // init
